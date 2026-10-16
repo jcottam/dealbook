@@ -6,7 +6,8 @@ Read-only review hub for the DealBook social calendar, editorial research, and (
 
 | Path | Purpose |
 |------|---------|
-| `source/content-calendar.csv` | **Source of truth** — content calendar (committed) |
+| `source/content-calendar.csv` | Content calendar snapshot (committed; pulled from Google Sheets) |
+| `source/calendar-source.json` | Sheet ID, tab `gid`, and sync target path |
 | `source/research/` | Editorial one-pagers (committed) |
 | `media/` | **Local media only** — `Post N - …` folders (gitignored; see `media/README.md`) |
 | `data/` | Generated JSON from CSV (`npm run build:data`); gitignored except `asset-map.json` |
@@ -15,6 +16,17 @@ Read-only review hub for the DealBook social calendar, editorial research, and (
 | `server/` | Local Node server (API, media, thumbnails) |
 | `lib/` | Parsing, matching, shared hub state |
 | `public/` | **Static deploy output** (`npm run build`); gitignored |
+
+## Content calendar (Google Sheets)
+
+The live calendar is edited in [Google Sheets](https://docs.google.com/spreadsheets/d/1-d2UHAbvuSlndFefisZPtI31yBsFUse6729QRRBjB9Q/edit?gid=796154075). Refresh the repo copy before build or deploy:
+
+```bash
+npm run sync:calendar      # → source/content-calendar.csv
+npm run refresh:calendar   # sync + npm run build:data
+```
+
+See **`AGENTS.md`** for source-of-truth layers, deploy implications, and doc update rules.
 
 ## Local development (full features)
 

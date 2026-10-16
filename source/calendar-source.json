@@ -1,0 +1,7 @@
+{
+  "$comment": "Canonical Google Sheet for the content calendar. sync-calendar.mjs exports gid tab to content-calendar.csv.",
+  "spreadsheetId": "1-d2UHAbvuSlndFefisZPtI31yBsFUse6729QRRBjB9Q",
+  "gid": "796154075",
+  "editUrl": "https://docs.google.com/spreadsheets/d/1-d2UHAbvuSlndFefisZPtI31yBsFUse6729QRRBjB9Q/edit?gid=796154075",
+  "output": "source/content-calendar.csv"
+}

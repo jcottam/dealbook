@@ -1,0 +1,134 @@
+{
+  "$comment": "Media moved into per-post folders from data-oct-15.csv. Each entry can be reversed by moving \"to\" back to \"from\".",
+  "movedAt": "2026-10-16T00:00:18.351Z",
+  "moves": [
+    {
+      "from": "2022/Shou_Chew/11.30.2022_NYT_DealbookSummit_NicoleCraine_433.JPG",
+      "to": "Post 18 - Shou Chew/11.30.2022_NYT_DealbookSummit_NicoleCraine_433.JPG"
+    },
+    {
+      "from": "2022/Shou_Chew/11.30.2022_NYT_DealbookSummit_NicoleCraine_436.JPG",
+      "to": "Post 18 - Shou Chew/11.30.2022_NYT_DealbookSummit_NicoleCraine_436.JPG"
+    },
+    {
+      "from": "2023/Andrew_Ross_Sorkin/_DSC0457.jpg",
+      "to": "Post 1 - History/_DSC0457.jpg"
+    },
+    {
+      "from": "2023/Elon_Musk/_DSC4309.jpg",
+      "to": "Post 2 - Elon Musk/_DSC4309.jpg"
+    },
+    {
+      "from": "2023/Elon_Musk/_DSC4383.jpg",
+      "to": "Post 11 - Musk and Bezos/_DSC4383.jpg"
+    },
+    {
+      "from": "2023/Elon_Musk/_DSC4412.jpg",
+      "to": "Post 2 - Elon Musk/_DSC4412.jpg"
+    },
+    {
+      "from": "2023/Elon_Musk/Elon_Musk_2023_00-04-55-22_to_00-05-17-09.mp4",
+      "to": "Post 2 - Elon Musk/Elon_Musk_2023_00-04-55-22_to_00-05-17-09.mp4"
+    },
+    {
+      "from": "2023/Elon_Musk/Elon_Musk_2023_00-31-39-04_to_00-32-13-24-proxy.mp4",
+      "to": "Post 11 - Musk and Bezos/Elon_Musk_2023_00-31-39-04_to_00-32-13-24-proxy.mp4"
+    },
+    {
+      "from": "2023/Jensen_Huang/_DSC0747.jpg",
+      "to": "Post 3 - Jensen Huang/_DSC0747.jpg"
+    },
+    {
+      "from": "2023/Jensen_Huang/Jensen_Huang_2023_00-24-01-01_to_00-24-49-17.mp4",
+      "to": "Post 3 - Jensen Huang/Jensen_Huang_2023_00-24-01-01_to_00-24-49-17.mp4"
+    },
+    {
+      "from": "2023/Shou_Chew/Shou_Chew_2023_00-13-58-13_to_00-14-09-03-proxy.mp4",
+      "to": "Post 18 - Shou Chew/Shou_Chew_2023_00-13-58-13_to_00-14-09-03-proxy.mp4"
+    },
+    {
+      "from": "2023/Shou_Chew/Shou_Chew_2023_00-24-50-02_to_00-25-09-04-proxy.mp4",
+      "to": "Post 18 - Shou Chew/Shou_Chew_2023_00-24-50-02_to_00-25-09-04-proxy.mp4"
+    },
+    {
+      "from": "2023/Sims_Brown/Sims_Brown_2023_00-11-45-18_to_00-12-17-20-proxy.mp4",
+      "to": "Post 19 - Sims Brown/Sims_Brown_2023_00-11-45-18_to_00-12-17-20-proxy.mp4"
+    },
+    {
+      "from": "2024/Alex_Cooper/2188269385.jpg",
+      "to": "Post 20 - Alex Cooper/2188269385.jpg"
+    },
+    {
+      "from": "2024/Alex_Cooper/Alex_Cooper_2024_14-17-22-23_to_14-17-43-proxy.mp4",
+      "to": "Post 20 - Alex Cooper/Alex_Cooper_2024_14-17-22-23_to_14-17-43-proxy.mp4"
+    },
+    {
+      "from": "2024/David_Ricks/David_Ricks_2024_14-58-49-25_to_14-58-59-36-proxy.mp4",
+      "to": "Post 13 - David Ricks/David_Ricks_2024_14-58-49-25_to_14-58-59-36-proxy.mp4"
+    },
+    {
+      "from": "2024/Jeff_Bezos/2188280197.jpg",
+      "to": "Post 11 - Musk and Bezos/2188280197.jpg"
+    },
+    {
+      "from": "2024/Jeff_Bezos/Jeff_Bezos_2024_17-23-18-44_to_17-24-09-22-proxy.mp4",
+      "to": "Post 11 - Musk and Bezos/Jeff_Bezos_2024_17-23-18-44_to_17-24-09-22-proxy.mp4"
+    },
+    {
+      "from": "2024/Kellyanne_Conway/Kellyanne_Conway_2024_11-32-28-01_to_11-32-54-22-proxy.mp4",
+      "to": "Post 6 - Kellyanne Conway/Kellyanne_Conway_2024_11-32-28-01_to_11-32-54-22-proxy.mp4"
+    },
+    {
+      "from": "2024/Sam_Altman/Sam_Altman_2024_09-59-53-42_to_10-00-29-18-proxy.mp4",
+      "to": "Post 21 - Sam Altman/Sam_Altman_2024_09-59-53-42_to_10-00-29-18-proxy.mp4"
+    },
+    {
+      "from": "2024/Sam_Altman/Sam_Altman_2024_10-29-43-54_to_10-30-56-42-proxy.mp4",
+      "to": "Post 15 - Sam Altman/Sam_Altman_2024_10-29-43-54_to_10-30-56-42-proxy.mp4"
+    },
+    {
+      "from": "2024/Serena_Williams/Serena_Williams_2024_11-03-52-22_to_11-04-21-56-proxy.mp4",
+      "to": "Post 5 - Serena Williams/Serena_Williams_2024_11-03-52-22_to_11-04-21-56-proxy.mp4"
+    },
+    {
+      "from": "2025/Alex_Karp/A9I04501_IyeT05aE.JPG",
+      "to": "Post 14 - Alex Karp/A9I04501_IyeT05aE.JPG"
+    },
+    {
+      "from": "2025/Alex_Karp/Alex_Karp_2025_11-34-24-42_to_11-35-16-01-proxy.mp4",
+      "to": "Post 14 - Alex Karp/Alex_Karp_2025_11-34-24-42_to_11-35-16-01-proxy.mp4"
+    },
+    {
+      "from": "2025/Andrew_Ross_Sorkin/Andrew_Ross_Sorkin_2025_16-58-47_to_16-59-12-proxy.mp4",
+      "to": "Post 9 - Charlie Kirk/Andrew_Ross_Sorkin_2025_16-58-47_to_16-59-12-proxy.mp4"
+    },
+    {
+      "from": "2025/Carmen_Ambar/Carmen_Ambar_2025_12-46-47_to_12-47-19-proxy.mp4",
+      "to": "Post 8 - Carmen Ambar/Carmen_Ambar_2025_12-46-47_to_12-47-19-proxy.mp4"
+    },
+    {
+      "from": "2025/Emma_Walmsley/Emma_Walmsley_2025_16-55-11-47_to_16-57-38-38-proxy.mp4",
+      "to": "Post 10 - 3 CEOs on Fear/Emma_Walmsley_2025_16-55-11-47_to_16-57-38-38-proxy.mp4"
+    },
+    {
+      "from": "2025/Erika_Kirk/A9I05677_zAXB8wll.JPG",
+      "to": "Post 9 - Charlie Kirk/A9I05677_zAXB8wll.JPG"
+    },
+    {
+      "from": "2025/Erika_Kirk/DEE09740_v9U8iIoE.JPG",
+      "to": "Post 9 - Charlie Kirk/DEE09740_v9U8iIoE.JPG"
+    },
+    {
+      "from": "2025/Halle_Berry/A9I04958_67a61N9X.JPG",
+      "to": "Post 12 - Halle Berry/A9I04958_67a61N9X.JPG"
+    },
+    {
+      "from": "2025/Halle_Berry/Halle_Berry_2025_14-19-04-45_to_14-19-45-53-proxy.mp4",
+      "to": "Post 12 - Halle Berry/Halle_Berry_2025_14-19-04-45_to_14-19-45-53-proxy.mp4"
+    },
+    {
+      "from": "2025/Mary_Barra/Mary_Barra_2025_10-39-45_to_10-40-56-proxy.mp4",
+      "to": "Post 7 - Mary Barra/Mary_Barra_2025_10-39-45_to_10-40-56-proxy.mp4"
+    }
+  ]
+}

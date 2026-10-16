@@ -1,0 +1,17 @@
+{
+  "name": "dealbook-social-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local, read-only review hub for DealBook social posts, editorial research, and media assets.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build-data.mjs && node scripts/build-static.mjs",
+    "build:data": "node scripts/build-data.mjs",
+    "start": "node server/server.mjs",
+    "preview": "npx --yes serve public -l 4173",
+    "test": "node --test \"test/*.test.mjs\""
+  }
+}

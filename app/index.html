@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DealBook Social Hub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='16' fill='black'/><text x='16' y='20.5' font-family='Helvetica,Arial' font-size='12' font-weight='600' fill='white' text-anchor='middle'>DB</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500..700&family=Playfair+Display:wght@400;600&display=swap" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#/">
+        <span class="brand-sub">DealBook Social Hub</span>
+      </a>
+      <nav class="nav">
+        <a href="#/" data-nav="posts">Posts</a>
+        <a href="#/assets" data-nav="assets">Asset Library</a>
+      </nav>
+      <label class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="6.5" /><path d="m20 20-4.4-4.4" /></svg>
+        <input id="q" type="search" placeholder="Search posts, speakers, quotes, filenames" autocomplete="off" spellcheck="false" />
+        <kbd>/</kbd>
+      </label>
+      <button class="icon-btn" id="settings-btn" title="Settings and data sources" aria-label="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.4 7.4 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.4 7.4 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.4 7.4 0 0 0 1.7 1l.4 2.5h4l.4-2.5a7.4 7.4 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6ZM13 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6Z" transform="translate(-1 0)" /></svg>
+      </button>
+    </header>
+
+    <main id="view" tabindex="-1"></main>
+
+    <dialog id="settings" class="dialog">
+      <form method="dialog" class="dialog-body" id="settings-form">
+        <header class="dialog-head">
+          <h2>Settings and data sources</h2>
+          <button class="icon-btn" value="close" aria-label="Close">&times;</button>
+        </header>
+        <label class="field">
+          <span>Media root directory</span>
+          <input name="mediaRoot" type="text" spellcheck="false" />
+          <small>Folder that contains the year and speaker media folders. Files are only read, never renamed or modified.</small>
+        </label>
+        <dl class="kv" id="settings-info"></dl>
+        <p class="settings-msg" id="settings-msg" role="status"></p>
+        <footer class="dialog-foot">
+          <button type="button" class="btn" id="rescan-btn">Rebuild data and rescan</button>
+          <button type="button" class="btn btn-primary" id="save-root-btn">Use this folder</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <div id="lightbox" class="lightbox" hidden></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script type="module" src="/router.js"></script>
+  </body>
+</html>

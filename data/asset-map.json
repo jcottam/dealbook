@@ -1,0 +1,4 @@
+{
+  "$comment": "Explicit post-to-asset links. Keys are post IDs from the built calendar; paths are relative to the media root. role is \"source\" or \"finished\".",
+  "posts": {}
+}

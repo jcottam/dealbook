@@ -1,0 +1,24 @@
+# Media library (never versioned)
+/20[0-9][0-9]/
+/Post */
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.png
+*.webp
+*.mp4
+*.mov
+*.MOV
+*.m4v
+
+# Generated
+.cache/
+public/
+data/posts.json
+data/research.json
+data/dataset.json
+
+# OS / tooling
+.DS_Store
+node_modules/

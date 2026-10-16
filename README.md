@@ -8,6 +8,7 @@ Read-only review hub for the DealBook social calendar, editorial research, and (
 |------|---------|
 | `source/content-calendar.csv` | **Source of truth** — content calendar (committed) |
 | `source/research/` | Editorial one-pagers (committed) |
+| `media/` | **Local media only** — `Post N - …` folders (gitignored; see `media/README.md`) |
 | `data/` | Generated JSON from CSV (`npm run build:data`); gitignored except `asset-map.json` |
 | `schema/` | Canonical post / platform-variant JSON Schema |
 | `app/` | Frontend (hash router SPA) |
@@ -23,7 +24,7 @@ npm run build:data   # refresh data/ from source/
 npm start            # http://127.0.0.1:4173
 ```
 
-Point **Settings → Media root** at the folder that contains `Post N - …` and year/speaker media. The server scans disk, serves `/media`, and generates video thumbnails when `ffmpeg` is installed.
+Default **Settings → Media root** is `media/` (see `hub.config.json`). That folder should contain `Post N - …` delivery directories and optional year/speaker archives. The server scans disk, serves `/media`, and generates video thumbnails when `ffmpeg` is installed.
 
 ## Deploy (calendar + research preview)
 
@@ -36,8 +37,8 @@ Deploy the **`public/`** directory. The app loads `/data/*.json` and does not re
 ### Vercel (recommended default)
 
 1. Import the Git repo in Vercel.
-2. Use defaults: **Build command** `npm run build`, **Output directory** `public` (also set in `vercel.json`).
-3. Deploy.
+2. Use defaults: **Build command** `npm run build`, **Output directory** `public`, **Framework preset** Other (static; no Node server).
+3. Deploy. The `media/` tree stays local — `.vercelignore` keeps it out of uploads.
 
 **Why Vercel first:** This project is a static SPA after build. Vercel’s zero-config flow matches that exactly—no Workers/R2 setup unless you need it.
 

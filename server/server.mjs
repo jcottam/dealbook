@@ -248,9 +248,9 @@ async function handle(req, res) {
   if (path === '/api/research') return send(res, 200, state.research);
   if (path === '/api/config' && req.method === 'GET') {
     return send(res, 200, {
-      mediaRoot: config.mediaRoot,
-      csv: config.csv,
-      research: config.research,
+      mediaRoot: config.raw?.mediaRoot ?? config.mediaRoot,
+      csv: config.raw?.csv ?? config.csv,
+      research: config.raw?.research ?? config.research,
       ffmpeg: HAS_FFMPEG,
       generatedAt: state.generatedAt,
       scannedAt: state.scannedAt,

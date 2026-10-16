@@ -77,7 +77,8 @@ writeFileSync(
         calendar: config.raw?.csv || 'source/content-calendar.csv',
         research: config.raw?.research || 'source/research/speaker-one-pagers.html',
       },
-      mediaRoot: mediaRoot && existsSync(mediaRoot) ? mediaRoot : null,
+      mediaRoot:
+        mediaRoot && existsSync(mediaRoot) ? config.raw?.mediaRoot || 'media' : null,
       posts: hub.posts.length,
       assets: hub.assets.length,
     },

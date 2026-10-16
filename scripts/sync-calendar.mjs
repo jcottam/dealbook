@@ -74,7 +74,7 @@ async function main() {
   if (!quiet) {
     console.log(`Wrote ${output} (${csv.length} bytes)`);
     console.log(`Sheet: ${editUrl}`);
-    console.log('Next: npm run build:data   # or npm run refresh:calendar');
+    console.log('Next: npm run build   # static site, or npm start after sync:calendar');
   }
 }
 

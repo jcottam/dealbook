@@ -22,8 +22,7 @@ Read-only review hub for the DealBook social calendar, editorial research, and (
 The live calendar is edited in [Google Sheets](https://docs.google.com/spreadsheets/d/1-d2UHAbvuSlndFefisZPtI31yBsFUse6729QRRBjB9Q/edit?gid=796154075). Refresh the repo copy before build or deploy:
 
 ```bash
-npm run sync:calendar      # → source/content-calendar.csv
-npm run refresh:calendar   # sync + npm run build:data
+npm run sync:calendar      # sheet → source/content-calendar.csv + data/*.json
 ```
 
 See **`AGENTS.md`** for source-of-truth layers, deploy implications, and doc update rules.

@@ -22,10 +22,9 @@ Manifest for the sheet (IDs, tab `gid`, paths): **`source/calendar-source.json`*
 ## Refresh calendar from Google Sheets
 
 ```bash
-npm run sync:calendar          # download → source/content-calendar.csv
-npm run sync:calendar:dry      # show whether an update would happen
-npm run refresh:calendar       # sync + rebuild data/*.json
-npm run refresh                # sync + full static build (public/)
+npm run sync:calendar          # sheet → source/content-calendar.csv + data/*.json
+npm run sync:calendar:dry      # preview CSV changes only (no build)
+npm run refresh                # sync:calendar + static site (public/)
 ```
 
 After refreshing, run **`npm test`** before committing CSV changes.

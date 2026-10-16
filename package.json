@@ -10,10 +10,9 @@
   "scripts": {
     "build": "node scripts/build-data.mjs && node scripts/build-static.mjs",
     "build:data": "node scripts/build-data.mjs",
-    "sync:calendar": "node scripts/sync-calendar.mjs",
+    "sync:calendar": "node scripts/sync-calendar.mjs && node scripts/build-data.mjs",
     "sync:calendar:dry": "node scripts/sync-calendar.mjs --dry-run",
-    "refresh:calendar": "node scripts/sync-calendar.mjs && node scripts/build-data.mjs",
-    "refresh": "node scripts/sync-calendar.mjs && npm run build",
+    "refresh": "npm run sync:calendar && node scripts/build-static.mjs",
     "start": "node server/server.mjs",
     "preview": "npx --yes serve public -l 4173",
     "test": "node --test \"test/*.test.mjs\""

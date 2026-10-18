@@ -2,8 +2,12 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-export const CONFIG_PATH = resolve(PROJECT_ROOT, 'hub.config.json');
+const _libDir = dirname(fileURLToPath(import.meta.url));
+/** Legacy social hub package root (`legacy/hub`). */
+export const HUB_ROOT = resolve(_libDir, '..');
+/** Monorepo root (`source/`, `media/`, `data/`). */
+export const PROJECT_ROOT = resolve(HUB_ROOT, '..', '..');
+export const CONFIG_PATH = resolve(HUB_ROOT, 'hub.config.json');
 export const DATA_DIR = resolve(PROJECT_ROOT, 'data');
 
 const DEFAULTS = {

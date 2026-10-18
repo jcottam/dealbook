@@ -2,11 +2,11 @@
 // Builds a static site in public/ for Vercel, Cloudflare Pages, or any static host.
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { DATA_DIR, PROJECT_ROOT, loadConfig } from '../lib/config.mjs';
+import { DATA_DIR, HUB_ROOT, PROJECT_ROOT, loadConfig } from '../lib/config.mjs';
 import { buildHubState } from '../lib/hub-state.mjs';
 import { buildData, writeData } from './build-data.mjs';
 
-const APP_DIR = resolve(PROJECT_ROOT, 'app');
+const APP_DIR = resolve(HUB_ROOT, 'app');
 const OUT_DIR = resolve(PROJECT_ROOT, 'public');
 
 function readJSON(file, fallback) {

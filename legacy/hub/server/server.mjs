@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { extname, isAbsolute, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { buildData, writeData } from '../scripts/build-data.mjs';
-import { DATA_DIR, PROJECT_ROOT, loadConfig, saveConfig } from '../lib/config.mjs';
+import { DATA_DIR, HUB_ROOT, PROJECT_ROOT, loadConfig, saveConfig } from '../lib/config.mjs';
 import { buildHubState } from '../lib/hub-state.mjs';
 import { IMAGE_EXT, VIDEO_EXT } from '../lib/scan.mjs';
 
@@ -16,7 +16,7 @@ const { values: args } = parseArgs({
 });
 
 let config = loadConfig({ mediaRoot: args.media, port: args.port && +args.port, host: args.host });
-const APP_DIR = resolve(PROJECT_ROOT, 'app');
+const APP_DIR = resolve(HUB_ROOT, 'app');
 const THUMB_DIR = resolve(PROJECT_ROOT, '.cache', 'thumbs');
 const HAS_FFMPEG = spawnSync('ffmpeg', ['-version'], { stdio: 'ignore' }).status === 0;
 

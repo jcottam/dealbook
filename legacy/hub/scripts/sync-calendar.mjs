@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const MANIFEST = resolve(PROJECT_ROOT, 'source/calendar-source.json');
 
 function loadManifest() {

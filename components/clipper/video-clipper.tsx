@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
+import { upload as uploadToBlob } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,10 @@ import { cn } from "@/lib/utils";
 type SourceKind = "url" | "file";
 type ClipPreset = "team" | "copy";
 type ExportedClip = { url: string; filename: string; bytes: number };
+type UploadState = { status: "uploading"; pct: number } | { status: "done" } | { status: "error"; message: string };
+type PendingUpload = { file: File; promise: Promise<string>; abort: AbortController };
+
+const MULTIPART_THRESHOLD_BYTES = 100 * 1024 * 1024;
 
 export function VideoClipper() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -31,6 +36,65 @@ export function VideoClipper() {
   const [progress, setProgress] = useState(0);
   const [transcript, setTranscript] = useState("");
   const [lastClip, setLastClip] = useState<ExportedClip | null>(null);
+  const [uploadState, setUploadState] = useState<UploadState | null>(null);
+  const uploadRef = useRef<PendingUpload | null>(null);
+
+  /** Uploads straight to private Blob; the server reads it back from there for clip and transcribe. */
+  const startUpload = useCallback((f: File) => {
+    uploadRef.current?.abort.abort();
+    const abort = new AbortController();
+    const isCurrent = () => uploadRef.current?.abort === abort;
+    setUploadState({ status: "uploading", pct: 0 });
+    const promise = uploadToBlob(`uploads/${f.name.replace(/[^\w.-]+/g, "_") || "video"}`, f, {
+      access: "private",
+      handleUploadUrl: "/api/upload",
+      contentType: f.type,
+      multipart: f.size > MULTIPART_THRESHOLD_BYTES,
+      abortSignal: abort.signal,
+      onUploadProgress: ({ percentage }) => {
+        if (isCurrent()) setUploadState({ status: "uploading", pct: percentage });
+      },
+    }).then(
+      (blob) => {
+        if (isCurrent()) setUploadState({ status: "done" });
+        return blob.pathname;
+      },
+      (err: unknown) => {
+        if (isCurrent()) {
+          uploadRef.current = null;
+          setUploadState({ status: "error", message: err instanceof Error ? err.message : "Upload failed" });
+        }
+        throw err;
+      },
+    );
+    promise.catch(() => {});
+    uploadRef.current = { file: f, promise, abort };
+    return promise;
+  }, []);
+
+  const cancelUpload = useCallback(() => {
+    uploadRef.current?.abort.abort();
+    uploadRef.current = null;
+    setUploadState(null);
+  }, []);
+
+  const sourcePayload = async (): Promise<Record<string, string>> => {
+    if (sourceKind === "url") return { url: urlInput.trim() };
+    if (!file) throw new Error("Choose a video file.");
+    const pending = uploadRef.current?.file === file ? uploadRef.current.promise : startUpload(file);
+    return { upload: await pending, filename: file.name };
+  };
+
+  const postJson = async (path: string, body: Record<string, unknown>) => {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || res.statusText);
+    return data;
+  };
 
   const urlMeta = useMemo(() => (previewSrc && sourceKind === "url" ? parsePresignedMeta(urlInput) : null), [previewSrc, sourceKind, urlInput]);
 
@@ -47,12 +111,13 @@ export function VideoClipper() {
       toast.error("Paste a video URL first.");
       return;
     }
+    cancelUpload();
     setFile(null);
     setSourceKind("url");
     setPreviewSrc(trimmed);
     setTranscript("");
     setLastClip(null);
-  }, [urlInput]);
+  }, [urlInput, cancelUpload]);
 
   const loadFile = useCallback((f: File) => {
     if (!f.type.startsWith("video/")) {
@@ -66,7 +131,8 @@ export function VideoClipper() {
     setPreviewSrc(objectUrl);
     setTranscript("");
     setLastClip(null);
-  }, []);
+    startUpload(f);
+  }, [startUpload]);
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
@@ -111,24 +177,9 @@ export function VideoClipper() {
     setBusy("clip");
     setProgress(15);
     try {
-      let res: Response;
-      if (sourceKind === "file" && file) {
-        const fd = new FormData();
-        fd.set("file", file);
-        fd.set("start", String(range.start));
-        fd.set("end", String(range.end));
-        fd.set("preset", preset);
-        res = await fetch("/api/clip", { method: "POST", body: fd });
-      } else {
-        res = await fetch("/api/clip", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: urlInput.trim(), start: range.start, end: range.end, preset }),
-        });
-      }
-      setProgress(80);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || res.statusText);
+      const source = await sourcePayload();
+      setProgress(40);
+      const data = await postJson("/api/clip", { ...source, ...range, preset });
       const clip: ExportedClip = { url: data.downloadUrl, filename: data.filename, bytes: data.bytes };
       setLastClip(clip);
       startDownload(clip.url);
@@ -148,23 +199,9 @@ export function VideoClipper() {
     setBusy("transcribe");
     setProgress(15);
     try {
-      let res: Response;
-      if (sourceKind === "file" && file) {
-        const fd = new FormData();
-        fd.set("file", file);
-        fd.set("start", String(range.start));
-        fd.set("end", String(range.end));
-        res = await fetch("/api/transcribe", { method: "POST", body: fd });
-      } else {
-        res = await fetch("/api/transcribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: urlInput.trim(), start: range.start, end: range.end }),
-        });
-      }
-      setProgress(70);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || res.statusText);
+      const source = await sourcePayload();
+      setProgress(40);
+      const data = await postJson("/api/transcribe", { ...source, ...range });
       setTranscript(data.text ?? "");
       toast.success("Transcript ready.");
     } catch (e) {
@@ -187,7 +224,7 @@ export function VideoClipper() {
         <Card>
           <CardHeader>
             <CardTitle>Source</CardTitle>
-            <CardDescription>Upload, drop, or paste a Mimir proxy URL. Preview streams from the URL; clipping runs server-side.</CardDescription>
+            <CardDescription>Upload, drop, or paste a Mimir proxy URL. Files upload to private storage in the background; clipping runs server-side.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div
@@ -234,6 +271,20 @@ export function VideoClipper() {
                   </>
                 ) : null}
               </p>
+            ) : null}
+            {sourceKind === "file" && file ? (
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <p className="truncate">
+                  <span className="font-medium text-foreground">{file.name}</span> · {formatBytes(file.size)}
+                  {" · "}
+                  {uploadState?.status === "uploading" ? `uploading ${Math.floor(uploadState.pct)}%` : null}
+                  {uploadState?.status === "done" ? "uploaded" : null}
+                  {uploadState?.status === "error" ? (
+                    <span className="text-destructive">upload failed, retries when you clip or transcribe</span>
+                  ) : null}
+                </p>
+                {uploadState?.status === "uploading" ? <Progress value={uploadState.pct} className="h-1" /> : null}
+              </div>
             ) : null}
           </CardContent>
         </Card>
@@ -298,8 +349,17 @@ export function VideoClipper() {
             </div>
             {busy ? (
               <div className="space-y-1">
-                <Progress value={progress} />
-                <p className="text-xs text-muted-foreground">{busy === "clip" ? "Creating clip…" : "Transcribing…"}</p>
+                {uploadState?.status === "uploading" ? (
+                  <>
+                    <Progress value={uploadState.pct} />
+                    <p className="text-xs text-muted-foreground">Uploading video… {Math.floor(uploadState.pct)}%</p>
+                  </>
+                ) : (
+                  <>
+                    <Progress value={progress} />
+                    <p className="text-xs text-muted-foreground">{busy === "clip" ? "Creating clip…" : "Transcribing…"}</p>
+                  </>
+                )}
               </div>
             ) : null}
             <Button type="button" className="w-full" disabled={!previewSrc || !!busy} onClick={downloadClip}>

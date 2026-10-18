@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { issueSignedToken, presignUrl, put } from "@vercel/blob";
+import { put } from "@vercel/blob";
+import { CLIP_PREFIX, signedBlobUrl } from "@/lib/blob";
 import { clipArgs, type ClipPreset, type TimeRange } from "@/lib/media/ffmpeg-args";
 import { createFfmpegSandbox, runFfmpeg, SANDBOX_WORKDIR } from "@/lib/media/ffmpeg-sandbox";
 
@@ -46,21 +47,12 @@ export async function exportClipFromUrl(
   const t2 = Date.now();
 
   // A unique folder keeps the readable filename, which becomes the download name.
-  const blob = await put(`clips/${randomUUID()}/${filename}`, video, {
+  const blob = await put(`${CLIP_PREFIX}${randomUUID()}/${filename}`, video, {
     access: "private",
     contentType: "video/mp4",
   });
-  const downloadUrl = await signedDownloadUrl(blob.pathname);
+  const downloadUrl = await signedBlobUrl(blob.pathname, { ttlMs: DOWNLOAD_LINK_TTL_MS, download: true });
 
   const timings: ClipTimings = { sandboxMs: t1 - t0, ffmpegMs: t2 - t1, uploadMs: Date.now() - t2 };
   return { downloadUrl, pathname: blob.pathname, bytes: video.length, timings };
-}
-
-async function signedDownloadUrl(pathname: string) {
-  const validUntil = Date.now() + DOWNLOAD_LINK_TTL_MS;
-  const token = await issueSignedToken({ pathname, operations: ["get"], validUntil });
-  const { presignedUrl } = await presignUrl(token, { operation: "get", pathname, access: "private" });
-  const u = new URL(presignedUrl);
-  u.searchParams.set("download", "1");
-  return u.toString();
 }

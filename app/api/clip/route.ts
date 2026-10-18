@@ -1,21 +1,13 @@
-import { isAllowedClipUrl, parsePresignedMeta } from "@/lib/clip-url";
+import { blobStoreConfigured } from "@/lib/blob";
 import { parseClipJson } from "@/lib/clip-validate";
 import { clipFilename, exportClipFromUrl } from "@/lib/media/export-clip";
 import { FfmpegError } from "@/lib/media/ffmpeg-sandbox";
+import { resolveSource } from "@/lib/media/source";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(req: Request) {
-  const contentType = req.headers.get("content-type") ?? "";
-
-  if (contentType.includes("multipart/form-data")) {
-    return Response.json(
-      { error: "Clipping uploaded files isn't available yet. Paste a video URL instead." },
-      { status: 501 },
-    );
-  }
-
   let body: unknown;
   try {
     body = await req.json();
@@ -25,26 +17,22 @@ export async function POST(req: Request) {
 
   const parsed = parseClipJson(body);
   if ("error" in parsed) {
-    return Response.json({ error: parsed.error }, { status: 400 });
+    return Response.json({ error: parsed.error }, { status: parsed.status });
   }
 
-  const { url } = parsed;
-  if (!isAllowedClipUrl(url)) {
-    return Response.json({ error: "URL host is not allowlisted for clipping" }, { status: 403 });
-  }
-
-  if (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) {
+  if (!blobStoreConfigured()) {
     return Response.json({ error: "Connect a Vercel Blob store to enable clip export." }, { status: 501 });
   }
 
-  const range = { start: parsed.start, end: parsed.end };
-  const filename = clipFilename(parsePresignedMeta(url)?.filename, range);
+  const { range, preset } = parsed;
 
   try {
-    const result = await exportClipFromUrl(url, range, parsed.preset, filename);
+    const { inputUrl, sourceName, host } = await resolveSource(parsed.source);
+    const filename = clipFilename(sourceName, range);
+    const result = await exportClipFromUrl(inputUrl, range, preset, filename);
     console.info("clip", {
-      host: new URL(url).hostname,
-      preset: parsed.preset,
+      host,
+      preset,
       durationSec: range.end - range.start,
       pathname: result.pathname,
       bytes: result.bytes,

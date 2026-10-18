@@ -4,7 +4,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { upload as uploadToBlob } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +43,11 @@ export function VideoClipper() {
   const [transcript, setTranscript] = useState("");
   const [lastClip, setLastClip] = useState<ExportedClip | null>(null);
   const [uploadState, setUploadState] = useState<UploadState | null>(null);
+  const [showSourcePicker, setShowSourcePicker] = useState(false);
   const uploadRef = useRef<PendingUpload | null>(null);
+
+  const showSourceCard = !previewSrc || showSourcePicker;
+  const hasActiveSource = previewSrc != null && sourceKind != null;
 
   /** Uploads straight to private Blob; the server reads it back from there for clip and transcribe. */
   const startUpload = useCallback((f: File) => {
@@ -123,6 +127,7 @@ export function VideoClipper() {
     setPreviewSrc(trimmed);
     setTranscript("");
     setLastClip(null);
+    setShowSourcePicker(false);
   }, [urlInput, cancelUpload]);
 
   const loadFile = useCallback((f: File) => {
@@ -137,6 +142,7 @@ export function VideoClipper() {
     setPreviewSrc(objectUrl);
     setTranscript("");
     setLastClip(null);
+    setShowSourcePicker(false);
     startUpload(f);
   }, [startUpload]);
 
@@ -225,19 +231,65 @@ export function VideoClipper() {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div
+      className={cn(
+        "grid gap-6",
+        hasActiveSource && "lg:grid-cols-[minmax(0,1fr)_320px]",
+      )}
+    >
       <div className="space-y-6">
         {previewSrc ? (
           <Card className={CLIPPER_CARD}>
             <CardHeader className={CLIPPER_CARD_HEADER}>
               <CardTitle>Video</CardTitle>
+              <CardAction>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={!!busy}
+                  onClick={() => setShowSourcePicker((open) => !open)}
+                >
+                  {showSourcePicker ? "Cancel" : "Change source"}
+                </Button>
+              </CardAction>
             </CardHeader>
             <CardContent className={CLIPPER_CARD_CONTENT}>
               <video ref={videoRef} src={previewSrc} controls className="aspect-video w-full rounded-md bg-black" />
+              {!showSourcePicker ? (
+                <>
+                  {urlMeta ? (
+                    <p className="text-xs text-muted-foreground">
+                      {urlMeta.filename ? <span className="font-medium text-foreground">{urlMeta.filename}</span> : urlMeta.host}
+                      {urlMeta.expiresAt ? (
+                        <>
+                          {" · "}
+                          link expires {urlMeta.expiresAt.toLocaleString()}
+                        </>
+                      ) : null}
+                    </p>
+                  ) : null}
+                  {sourceKind === "file" && file ? (
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      <p className="truncate">
+                        <span className="font-medium text-foreground">{file.name}</span> · {formatBytes(file.size)}
+                        {" · "}
+                        {uploadState?.status === "uploading" ? `uploading ${Math.floor(uploadState.pct)}%` : null}
+                        {uploadState?.status === "done" ? "uploaded" : null}
+                        {uploadState?.status === "error" ? (
+                          <span className="text-destructive">upload failed, retries when you clip or transcribe</span>
+                        ) : null}
+                      </p>
+                      {uploadState?.status === "uploading" ? <Progress value={uploadState.pct} className="h-1" /> : null}
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
             </CardContent>
           </Card>
         ) : null}
 
+        {showSourceCard ? (
         <Card className={CLIPPER_CARD}>
           <CardHeader className={CLIPPER_CARD_HEADER}>
             <CardTitle>Source</CardTitle>
@@ -305,8 +357,10 @@ export function VideoClipper() {
             ) : null}
           </CardContent>
         </Card>
+        ) : null}
       </div>
 
+      {hasActiveSource ? (
       <div className="space-y-6">
         <Card className={CLIPPER_CARD}>
           <CardHeader className={CLIPPER_CARD_HEADER}>
@@ -409,6 +463,7 @@ export function VideoClipper() {
           </CardContent>
         </Card>
       </div>
+      ) : null}
     </div>
   );
 }

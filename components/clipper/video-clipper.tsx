@@ -5,6 +5,7 @@ import { upload as uploadToBlob } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -21,6 +22,11 @@ type PendingUpload = { file: File; promise: Promise<string>; abort: AbortControl
 
 const MULTIPART_THRESHOLD_BYTES = 100 * 1024 * 1024;
 
+/** Shared card chrome so header/body spacing matches across the clipper layout. */
+const CLIPPER_CARD = "gap-0 py-0";
+const CLIPPER_CARD_HEADER = "pt-6 pb-0";
+const CLIPPER_CARD_CONTENT = "pb-6 pt-4 space-y-4";
+
 export function VideoClipper() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,7 +37,7 @@ export function VideoClipper() {
   const [file, setFile] = useState<File | null>(null);
   const [startTime, setStartTime] = useState("0:00");
   const [endTime, setEndTime] = useState("0:30");
-  const [preset, setPreset] = useState<ClipPreset>("team");
+  const [preset, setPreset] = useState<ClipPreset>("copy");
   const [busy, setBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [transcript, setTranscript] = useState("");
@@ -220,13 +226,24 @@ export function VideoClipper() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
+      <div className="space-y-6">
+        {previewSrc ? (
+          <Card className={CLIPPER_CARD}>
+            <CardHeader className={CLIPPER_CARD_HEADER}>
+              <CardTitle>Video</CardTitle>
+            </CardHeader>
+            <CardContent className={CLIPPER_CARD_CONTENT}>
+              <video ref={videoRef} src={previewSrc} controls className="aspect-video w-full rounded-md bg-black" />
+            </CardContent>
+          </Card>
+        ) : null}
+
+        <Card className={CLIPPER_CARD}>
+          <CardHeader className={CLIPPER_CARD_HEADER}>
             <CardTitle>Source</CardTitle>
             <CardDescription>Upload, drop, or paste a Mimir proxy URL. Files upload to private storage in the background; clipping runs server-side.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className={CLIPPER_CARD_CONTENT}>
             <div
               className={cn(
                 "flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground",
@@ -288,26 +305,18 @@ export function VideoClipper() {
             ) : null}
           </CardContent>
         </Card>
-
-        {previewSrc ? (
-          <Card>
-            <CardContent className="pt-6">
-              <video ref={videoRef} src={previewSrc} controls className="aspect-video w-full rounded-md bg-black" />
-            </CardContent>
-          </Card>
-        ) : null}
       </div>
 
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
+      <div className="space-y-6">
+        <Card className={CLIPPER_CARD}>
+          <CardHeader className={CLIPPER_CARD_HEADER}>
             <CardTitle>In / out</CardTitle>
             <CardDescription>
               {durationSeconds != null ? `${formatSeconds(durationSeconds)} selected` : "Set start and end"}
               {durationSeconds != null && durationSeconds > MAX_CLIP_SECONDS ? " (too long)" : ""}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className={CLIPPER_CARD_CONTENT}>
             <div className="space-y-2">
               <Label htmlFor="start">Start</Label>
               <div className="flex gap-2">
@@ -328,23 +337,31 @@ export function VideoClipper() {
             </div>
             <div className="space-y-2">
               <Label>Export quality</Label>
-              <div className="flex flex-col gap-2">
-                <Button
-                  type="button"
-                  variant={preset === "team" ? "default" : "outline"}
-                  className="justify-start"
-                  onClick={() => setPreset("team")}
-                >
-                  Share quality
-                </Button>
-                <Button
-                  type="button"
-                  variant={preset === "copy" ? "default" : "outline"}
-                  className="justify-start"
-                  onClick={() => setPreset("copy")}
-                >
-                  Full quality
-                </Button>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="preset-share"
+                    checked={preset === "team"}
+                    onCheckedChange={(checked) => {
+                      if (checked === true) setPreset("team");
+                    }}
+                  />
+                  <Label htmlFor="preset-share" className="cursor-pointer font-normal">
+                    Share quality
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="preset-full"
+                    checked={preset === "copy"}
+                    onCheckedChange={(checked) => {
+                      if (checked === true) setPreset("copy");
+                    }}
+                  />
+                  <Label htmlFor="preset-full" className="cursor-pointer font-normal">
+                    Full quality
+                  </Label>
+                </div>
               </div>
             </div>
             {busy ? (
@@ -380,11 +397,11 @@ export function VideoClipper() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className={CLIPPER_CARD}>
+          <CardHeader className={CLIPPER_CARD_HEADER}>
             <CardTitle>Transcript</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className={CLIPPER_CARD_CONTENT}>
             <Textarea value={transcript} readOnly placeholder="Run transcribe to fill this in." rows={8} className="resize-none text-sm" />
             <Button type="button" variant="outline" size="sm" disabled={!transcript} onClick={copyTranscript}>
               Copy to clipboard

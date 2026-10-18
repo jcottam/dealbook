@@ -211,7 +211,7 @@ export function VideoClipper() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [previewSrc]);
 
-  const validateSelection = (): { start: number; end: number } | null => {
+  const validateSelection = useCallback((): { start: number; end: number } | null => {
     const start = parseTimeToSeconds(startTime);
     const end = parseTimeToSeconds(endTime);
     if (start == null || end == null) {
@@ -228,7 +228,7 @@ export function VideoClipper() {
       return null;
     }
     return { start, end };
-  };
+  }, [startTime, endTime]);
 
   const previewSelection = useCallback(() => {
     const range = validateSelection();
@@ -277,7 +277,7 @@ export function VideoClipper() {
       v.addEventListener("seeked", playFromStart, { once: true });
       v.currentTime = start;
     }
-  }, [stopClipPreview, startTime, endTime]);
+  }, [stopClipPreview, validateSelection]);
 
   const exportClip = async (): Promise<ExportedClip | null> => {
     const range = validateSelection();

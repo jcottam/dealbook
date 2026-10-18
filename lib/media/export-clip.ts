@@ -1,13 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { put } from "@vercel/blob";
-import { CLIP_PREFIX, signedBlobUrl } from "@/lib/blob";
+import { blobDownloadUrl, CLIP_PREFIX } from "@/lib/blob";
 import { clipArgs, type ClipPreset, type TimeRange } from "@/lib/media/ffmpeg-args";
 import { createFfmpegSandbox, runFfmpeg, SANDBOX_WORKDIR } from "@/lib/media/ffmpeg-sandbox";
 
 const CLIP_PATH = `${SANDBOX_WORKDIR}/clip.mp4`;
 const SANDBOX_TIMEOUT_MS = 4 * 60_000;
-const DOWNLOAD_LINK_TTL_MS = 60 * 60_000;
-
 export type ClipTimings = { sandboxMs: number; ffmpegMs: number; uploadMs: number };
 
 export function clipFilename(sourceName: string | null | undefined, range: TimeRange): string {
@@ -48,10 +46,10 @@ export async function exportClipFromUrl(
 
   // A unique folder keeps the readable filename, which becomes the download name.
   const blob = await put(`${CLIP_PREFIX}${randomUUID()}/${filename}`, video, {
-    access: "private",
+    access: "public",
     contentType: "video/mp4",
   });
-  const downloadUrl = await signedBlobUrl(blob.pathname, { ttlMs: DOWNLOAD_LINK_TTL_MS, download: true });
+  const downloadUrl = blobDownloadUrl(blob.url);
 
   const timings: ClipTimings = { sandboxMs: t1 - t0, ffmpegMs: t2 - t1, uploadMs: Date.now() - t2 };
   return { downloadUrl, pathname: blob.pathname, bytes: video.length, timings };

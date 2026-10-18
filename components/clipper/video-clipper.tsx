@@ -240,6 +240,12 @@ export function VideoClipper() {
     toast.success("Copied to clipboard.");
   };
 
+  const copyClipUrl = async () => {
+    if (!lastClip) return;
+    await navigator.clipboard.writeText(lastClip.url);
+    toast.success("Clip link copied.");
+  };
+
   return (
     <div
       className={cn(
@@ -299,7 +305,7 @@ export function VideoClipper() {
         <Card className={CLIPPER_CARD}>
           <CardHeader className={CLIPPER_CARD_HEADER}>
             <CardTitle>Source</CardTitle>
-            <CardDescription>Upload, drop, or paste a Mimir proxy URL. Files upload to private storage in the background; clipping runs server-side.</CardDescription>
+            <CardDescription>Paste a Mimir proxy URL (read directly in Sandbox) or upload a file (stored privately in Blob only while processing). Clipping runs server-side.</CardDescription>
           </CardHeader>
           <CardContent className={CLIPPER_CARD_CONTENT}>
             <div
@@ -418,13 +424,30 @@ export function VideoClipper() {
               Download clip
             </Button>
             {lastClip ? (
-              <p className="truncate text-xs text-muted-foreground">
-                Last clip:{" "}
-                <a href={lastClip.url} className="font-medium text-foreground underline underline-offset-4">
-                  {lastClip.filename}
-                </a>{" "}
-                · {formatBytes(lastClip.bytes)} · link valid 1 hour
-              </p>
+              <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+                  <p className="text-sm font-medium text-foreground">Clip link</p>
+                  <p className="text-xs text-muted-foreground">
+                    {lastClip.filename} · {formatBytes(lastClip.bytes)} · public link
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    readOnly
+                    value={lastClip.url}
+                    className="min-w-0 font-mono text-xs"
+                    aria-label="Clip download URL"
+                  />
+                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={copyClipUrl}>
+                    Copy link
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  <a href={lastClip.url} className="text-foreground underline underline-offset-4">
+                    Download again
+                  </a>
+                </p>
+              </div>
             ) : null}
             <Button type="button" className="w-full" variant="secondary" disabled={!previewSrc || !!busy} onClick={runTranscribe}>
               Transcribe selection

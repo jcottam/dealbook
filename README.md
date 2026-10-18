@@ -40,10 +40,10 @@ Clip and transcribe run ffmpeg in [Vercel Sandbox](https://vercel.com/docs/sandb
 ```bash
 vercel env pull .env.local   # project env (Development target) + Sandbox auth token, ~12 h
 pnpm try:transcribe '<url>' 60 120   # extract + transcribe a range from the CLI
-pnpm try:clip '<url>' 60 120 team    # export a clip (team | copy) and print a 1-hour download link
+pnpm try:clip '<url>' 60 120 team    # export a clip (team | copy) and print the public download URL
 ```
 
-Both use the private Vercel Blob store `dealbook-clips`. Local files upload from the browser straight to `uploads/` (up to 5 GB; Functions can't accept request bodies over ~4.5 MB), and exported clips go to `clips/`. The app hands out signed download links that expire after an hour; nothing is deleted automatically.
+Both use the Vercel Blob store `dealbook-clips`. Mimir (or other) proxy URLs are read directly in Sandbox—no source copy in Blob. Local files upload from the browser to private `uploads/` (up to 5 GB; Functions can't accept request bodies over ~4.5 MB) so ffmpeg can range-read them; exported clips go to public `clips/` with stable URLs. Nothing is deleted automatically.
 
 `.env.example` lists the variables. To rebuild the ffmpeg snapshot, run `pnpm sandbox:snapshot` and update `FFMPEG_SNAPSHOT_ID` in Vercel.
 

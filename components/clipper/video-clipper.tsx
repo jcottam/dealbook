@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 type SourceKind = "url" | "file";
 type ClipPreset = "team" | "copy";
+type ExportedClip = { url: string; filename: string; bytes: number };
 
 export function VideoClipper() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -29,6 +30,7 @@ export function VideoClipper() {
   const [busy, setBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [transcript, setTranscript] = useState("");
+  const [lastClip, setLastClip] = useState<ExportedClip | null>(null);
 
   const urlMeta = useMemo(() => (previewSrc && sourceKind === "url" ? parsePresignedMeta(urlInput) : null), [previewSrc, sourceKind, urlInput]);
 
@@ -49,6 +51,7 @@ export function VideoClipper() {
     setSourceKind("url");
     setPreviewSrc(trimmed);
     setTranscript("");
+    setLastClip(null);
   }, [urlInput]);
 
   const loadFile = useCallback((f: File) => {
@@ -62,6 +65,7 @@ export function VideoClipper() {
     const objectUrl = URL.createObjectURL(f);
     setPreviewSrc(objectUrl);
     setTranscript("");
+    setLastClip(null);
   }, []);
 
   const onDrop = useCallback(
@@ -105,45 +109,30 @@ export function VideoClipper() {
     if (!range || !sourceKind) return;
 
     setBusy("clip");
-    setProgress(10);
+    setProgress(15);
     try {
+      let res: Response;
       if (sourceKind === "file" && file) {
         const fd = new FormData();
         fd.set("file", file);
         fd.set("start", String(range.start));
         fd.set("end", String(range.end));
         fd.set("preset", preset);
-        setProgress(40);
-        const res = await fetch("/api/clip", { method: "POST", body: fd });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || res.statusText);
-        }
-        setProgress(90);
-        const blob = await res.blob();
-        triggerDownload(blob, file.name.replace(/\.[^.]+$/, "") + "-clip.mp4");
+        res = await fetch("/api/clip", { method: "POST", body: fd });
       } else {
-        setProgress(40);
-        const res = await fetch("/api/clip", {
+        res = await fetch("/api/clip", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            url: urlInput.trim(),
-            start: range.start,
-            end: range.end,
-            preset,
-          }),
+          body: JSON.stringify({ url: urlInput.trim(), start: range.start, end: range.end, preset }),
         });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || res.statusText);
-        }
-        setProgress(90);
-        const blob = await res.blob();
-        const name = urlMeta?.filename?.replace(/\.[^.]+$/, "") ?? "clip";
-        triggerDownload(blob, `${name}-clip.mp4`);
       }
-      toast.success("Clip ready.");
+      setProgress(80);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      const clip: ExportedClip = { url: data.downloadUrl, filename: data.filename, bytes: data.bytes };
+      setLastClip(clip);
+      startDownload(clip.url);
+      toast.success(`Clip ready (${formatBytes(clip.bytes)}).`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Clip failed.");
     } finally {
@@ -303,7 +292,7 @@ export function VideoClipper() {
                   className="justify-start"
                   onClick={() => setPreset("copy")}
                 >
-                  Fast trim (stream copy)
+                  Fast trim (source quality, keyframe cut)
                 </Button>
               </div>
             </div>
@@ -316,6 +305,15 @@ export function VideoClipper() {
             <Button type="button" className="w-full" disabled={!previewSrc || !!busy} onClick={downloadClip}>
               Download clip
             </Button>
+            {lastClip ? (
+              <p className="truncate text-xs text-muted-foreground">
+                Last clip:{" "}
+                <a href={lastClip.url} className="font-medium text-foreground underline underline-offset-4">
+                  {lastClip.filename}
+                </a>{" "}
+                · {formatBytes(lastClip.bytes)} · link valid 1 hour
+              </p>
+            ) : null}
             <Button type="button" className="w-full" variant="secondary" disabled={!previewSrc || !!busy} onClick={runTranscribe}>
               Transcribe selection
             </Button>
@@ -338,10 +336,14 @@ export function VideoClipper() {
   );
 }
 
-function triggerDownload(blob: Blob, filename: string) {
+/** The signed Blob URL responds with `Content-Disposition: attachment`, so navigating to it downloads. */
+function startDownload(url: string) {
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
+  a.href = url;
+  a.rel = "noopener";
   a.click();
-  URL.revokeObjectURL(a.href);
+}
+
+function formatBytes(bytes: number) {
+  return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(bytes / 1024)} KB`;
 }

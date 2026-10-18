@@ -27,7 +27,10 @@ Clip and transcribe run ffmpeg in [Vercel Sandbox](https://vercel.com/docs/sandb
 ```bash
 vercel env pull .env.local   # project env (Development target) + Sandbox auth token, ~12 h
 pnpm try:transcribe '<url>' 60 120   # extract + transcribe a range from the CLI
+pnpm try:clip '<url>' 60 120 team    # export a clip (team | copy) and print a 1-hour download link
 ```
+
+Exported clips go to the private Vercel Blob store `dealbook-clips` under `clips/`. The app hands out signed download links that expire after an hour; clips are not deleted automatically.
 
 `.env.example` lists the variables. To rebuild the ffmpeg snapshot, run `pnpm sandbox:snapshot` and update `FFMPEG_SNAPSHOT_ID` in Vercel.
 

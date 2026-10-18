@@ -21,7 +21,8 @@
     "test:legacy": "node --test \"legacy/hub/test/*.test.mjs\"",
     "test:app": "vitest run",
     "sandbox:snapshot": "tsx --env-file=.env.local scripts/create-ffmpeg-snapshot.mts",
-    "try:transcribe": "tsx --env-file=.env.local scripts/try-transcribe.mts"
+    "try:transcribe": "tsx --env-file=.env.local scripts/try-transcribe.mts",
+    "try:clip": "tsx --env-file=.env.local scripts/try-clip.mts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.96",
@@ -30,6 +31,7 @@
     "@radix-ui/react-separator": "^1.2.0",
     "@radix-ui/react-slot": "^1.5.0",
     "@radix-ui/react-tooltip": "^1.4.1",
+    "@vercel/blob": "^2.8.2",
     "@vercel/sandbox": "^3.8.0",
     "ai": "^7.0.143",
     "class-variance-authority": "^0.7.1",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { audioExtractArgs, redactUrls } from "@/lib/media/ffmpeg-args";
+import { audioExtractArgs, clipArgs, redactUrls } from "@/lib/media/ffmpeg-args";
 
 describe("audioExtractArgs", () => {
   it("seeks before the input and limits duration", () => {
@@ -16,6 +16,35 @@ describe("audioExtractArgs", () => {
     expect(args).toContain("-vn");
     expect(args.slice(args.indexOf("-ac"), args.indexOf("-ac") + 2)).toEqual(["-ac", "1"]);
     expect(args.slice(args.indexOf("-ar"), args.indexOf("-ar") + 2)).toEqual(["-ar", "16000"]);
+  });
+});
+
+describe("clipArgs", () => {
+  const range = { start: 30, end: 90 };
+
+  it("seeks before the input and writes a faststart MP4", () => {
+    const args = clipArgs("https://h/v.mp4?sig=1", range, "/out.mp4", "team");
+    expect(args.indexOf("-ss")).toBeLessThan(args.indexOf("-i"));
+    expect(args[args.indexOf("-t") + 1]).toBe("60.000");
+    expect(args.slice(args.indexOf("-movflags"), args.indexOf("-movflags") + 2)).toEqual(["-movflags", "+faststart"]);
+    expect(args.at(-1)).toBe("/out.mp4");
+  });
+
+  it("team preset re-encodes to H.264 capped at 720p", () => {
+    const args = clipArgs("in.mp4", range, "o.mp4", "team");
+    expect(args[args.indexOf("-c:v") + 1]).toBe("libx264");
+    expect(args[args.indexOf("-vf") + 1]).toBe("scale=-2:'min(720,ih)'");
+    expect(args).not.toContain("copy");
+  });
+
+  it("copy preset keeps source streams", () => {
+    const args = clipArgs("in.mp4", range, "o.mp4", "copy");
+    expect(args.slice(args.indexOf("-c"), args.indexOf("-c") + 2)).toEqual(["-c", "copy"]);
+    expect(args).not.toContain("-vf");
+  });
+
+  it("tolerates sources without audio", () => {
+    expect(clipArgs("in.mp4", range, "o.mp4", "team")).toContain("0:a:0?");
   });
 });
 

@@ -22,8 +22,8 @@ export async function installFfmpeg(sandbox: Sandbox) {
  * Boots a one-off VM that can reach only `allowHosts`.
  * Without FFMPEG_SNAPSHOT_ID, installs ffmpeg first (slow — run `pnpm sandbox:snapshot` once).
  */
-export async function createFfmpegSandbox(opts: { allowHosts: string[]; timeoutMs: number }) {
-  const base = { timeout: opts.timeoutMs, resources: { vcpus: 2 }, persistent: false };
+export async function createFfmpegSandbox(opts: { allowHosts: string[]; timeoutMs: number; vcpus?: number }) {
+  const base = { timeout: opts.timeoutMs, resources: { vcpus: opts.vcpus ?? 2 }, persistent: false };
   const snapshotId = process.env.FFMPEG_SNAPSHOT_ID;
 
   if (snapshotId) {

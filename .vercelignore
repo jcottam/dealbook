@@ -1,13 +1,10 @@
-# Local media (hundreds of MB) — not part of static deploy
-media/
+# Local media (hundreds of MB) — not part of deploy. Anchored so lib/media/ still ships.
+/media/
 
-# Build output is produced on Vercel; don't upload a stale copy
-public/
-
-.cache/
+/.cache/
 node_modules/
 .DS_Store
 .env*
 
 # Stray post folders if media root was ever the repo root
-Post */
+/Post */

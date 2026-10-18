@@ -1,4 +1,7 @@
 import { issueSignedToken, presignUrl, put } from "@vercel/blob";
+import { blobDownloadUrl } from "@/lib/blob-download-url";
+
+export { blobDownloadUrl };
 
 export const CLIP_PREFIX = "clips/";
 
@@ -19,13 +22,6 @@ export async function putPublicClip(pathname: string, body: Buffer, contentType:
     );
   }
   return put(pathname, body, { access: "public", contentType, token });
-}
-
-/** `download=1` makes the browser save the blob instead of playing it inline. */
-export function blobDownloadUrl(blobUrl: string) {
-  const u = new URL(blobUrl);
-  u.searchParams.set("download", "1");
-  return u.toString();
 }
 
 /** Short-lived GET link to one private blob. `download` makes the browser save it instead of playing it. */

@@ -14,6 +14,6 @@ const filename = clipFilename(parsePresignedMeta(url)?.filename, range);
 console.log(`snapshot: ${process.env.FFMPEG_SNAPSHOT_ID ?? "none (installing ffmpeg at boot)"}`);
 
 const t0 = Date.now();
-const { downloadUrl, pathname, bytes, timings } = await exportClipFromUrl(url, range, preset, filename);
+const { url: clipUrl, pathname, bytes, timings } = await exportClipFromUrl(url, range, preset, filename);
 console.log(`${preset}: ${pathname} ${(bytes / 1024 / 1024).toFixed(1)} MB`, timings);
-console.log(`total ${Date.now() - t0} ms\n\n${downloadUrl}`);
+console.log(`total ${Date.now() - t0} ms\n\n${clipUrl}`);

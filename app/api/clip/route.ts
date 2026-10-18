@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       ...result.timings,
     });
     return Response.json({
-      downloadUrl: result.downloadUrl,
+      url: result.url,
       filename,
       bytes: result.bytes,
       timings: result.timings,

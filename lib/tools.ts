@@ -12,7 +12,7 @@ export const tools: Tool[] = [
   {
     slug: "clipper",
     title: "Video clipper",
-    description: "Trim proxies and local files, export short clips, and transcribe selections.",
+    description: "Trim videos from a URL or upload, export clips, and transcribe selections.",
     icon: Scissors,
   },
 ];

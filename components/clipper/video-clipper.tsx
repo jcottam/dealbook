@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { formatSeconds, MAX_CLIP_SECONDS, parseTimeToSeconds } from "@/lib/timecode";
+import { blobDownloadUrl } from "@/lib/blob-download-url";
 import { parsePresignedMeta } from "@/lib/clip-url";
 import { cn } from "@/lib/utils";
 
@@ -192,9 +193,9 @@ export function VideoClipper() {
     return { start, end };
   };
 
-  const downloadClip = async () => {
+  const exportClip = async (): Promise<ExportedClip | null> => {
     const range = validateSelection();
-    if (!range || !sourceKind) return;
+    if (!range || !sourceKind) return null;
 
     setBusy("clip");
     setProgress(15);
@@ -202,16 +203,30 @@ export function VideoClipper() {
       const source = await sourcePayload();
       setProgress(40);
       const data = await postJson("/api/clip", { ...source, ...range, preset });
-      const clip: ExportedClip = { url: data.downloadUrl, filename: data.filename, bytes: data.bytes };
-      setLastClip(clip);
-      startDownload(clip.url);
-      toast.success(`Clip ready (${formatBytes(clip.bytes)}).`);
+      const clip: ExportedClip = { url: data.url, filename: data.filename, bytes: data.bytes };
+      return clip;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Clip failed.");
+      return null;
     } finally {
       setBusy(null);
       setProgress(0);
     }
+  };
+
+  const saveClipToDevice = async () => {
+    const clip = await exportClip();
+    if (!clip) return;
+    setLastClip(clip);
+    startDownload(blobDownloadUrl(clip.url));
+    toast.success(`Saved to downloads (${formatBytes(clip.bytes)}).`);
+  };
+
+  const createShareLink = async () => {
+    const clip = await exportClip();
+    if (!clip) return;
+    setLastClip(clip);
+    toast.success(`Share link ready (${formatBytes(clip.bytes)}).`);
   };
 
   const runTranscribe = async () => {
@@ -275,12 +290,6 @@ export function VideoClipper() {
               {urlMeta ? (
                 <p className="text-xs text-muted-foreground">
                   {urlMeta.filename ? <span className="font-medium text-foreground">{urlMeta.filename}</span> : urlMeta.host}
-                  {urlMeta.expiresAt ? (
-                    <>
-                      {" · "}
-                      link expires {urlMeta.expiresAt.toLocaleString()}
-                    </>
-                  ) : null}
                 </p>
               ) : null}
               {sourceKind === "file" && file ? (
@@ -305,7 +314,7 @@ export function VideoClipper() {
         <Card className={CLIPPER_CARD}>
           <CardHeader className={CLIPPER_CARD_HEADER}>
             <CardTitle>Source</CardTitle>
-            <CardDescription>Paste a Mimir proxy URL (read directly in Sandbox) or upload a file (stored privately in Blob only while processing). Clipping runs server-side.</CardDescription>
+            <CardDescription>Paste a direct link to a video or upload a file from your computer, then set in and out points to export a clip or transcript.</CardDescription>
           </CardHeader>
           <CardContent className={CLIPPER_CARD_CONTENT}>
             <div
@@ -333,7 +342,7 @@ export function VideoClipper() {
             </div>
             <div className="flex gap-2">
               <Input
-                placeholder="https://…/proxy_1.mp4?…"
+                placeholder="https://example.com/video.mp4"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && loadUrl()}
@@ -420,38 +429,45 @@ export function VideoClipper() {
                 )}
               </div>
             ) : null}
-            <Button type="button" className="w-full" disabled={!previewSrc || !!busy} onClick={downloadClip}>
-              Download clip
-            </Button>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button
+                type="button"
+                className="w-full"
+                disabled={!previewSrc || !!busy}
+                onClick={createShareLink}
+              >
+                Create share link
+              </Button>
+              <Button type="button" className="w-full" variant="outline" disabled={!previewSrc || !!busy} onClick={saveClipToDevice}>
+                Save to device
+              </Button>
+            </div>
             {lastClip ? (
-              <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-                  <p className="text-sm font-medium text-foreground">Clip link</p>
-                  <p className="text-xs text-muted-foreground">
-                    {lastClip.filename} · {formatBytes(lastClip.bytes)} · public link
-                  </p>
-                </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Share link</p>
                 <div className="flex gap-2">
                   <Input
                     readOnly
                     value={lastClip.url}
                     className="min-w-0 font-mono text-xs"
-                    aria-label="Clip download URL"
+                    aria-label="Clip share URL"
                   />
                   <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={copyClipUrl}>
                     Copy link
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  <a href={lastClip.url} className="text-foreground underline underline-offset-4">
-                    Download again
+                  <a href={lastClip.url} target="_blank" rel="noopener noreferrer" className="text-foreground underline underline-offset-4">
+                    Open in new tab
                   </a>
                 </p>
               </div>
             ) : null}
-            <Button type="button" className="w-full" variant="secondary" disabled={!previewSrc || !!busy} onClick={runTranscribe}>
-              Transcribe selection
-            </Button>
+            <div className="space-y-4 border-t border-border pt-6">
+              <Button type="button" className="w-full" variant="secondary" disabled={!previewSrc || !!busy} onClick={runTranscribe}>
+                Transcribe selection
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -472,7 +488,7 @@ export function VideoClipper() {
   );
 }
 
-/** The signed Blob URL responds with `Content-Disposition: attachment`, so navigating to it downloads. */
+/** Triggers a browser download (`download=1` on Vercel Blob public URLs). */
 function startDownload(url: string) {
   const a = document.createElement("a");
   a.href = url;

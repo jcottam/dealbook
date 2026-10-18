@@ -1,9 +1,24 @@
-import { issueSignedToken, presignUrl } from "@vercel/blob";
+import { issueSignedToken, presignUrl, put } from "@vercel/blob";
 
 export const CLIP_PREFIX = "clips/";
 
 export function blobStoreConfigured() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
+}
+
+/** Public `media-utils-clips-public` store (stable clip URLs). Uses `BLOB_READ_WRITE_TOKEN` from that connection. */
+export function publicClipsStoreConfigured() {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+}
+
+export async function putPublicClip(pathname: string, body: Buffer, contentType: string) {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) {
+    throw new Error(
+      "Connect the media-utils-clips-public Blob store to this project (BLOB_READ_WRITE_TOKEN).",
+    );
+  }
+  return put(pathname, body, { access: "public", contentType, token });
 }
 
 /** `download=1` makes the browser save the blob instead of playing it inline. */

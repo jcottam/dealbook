@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { put } from "@vercel/blob";
-import { blobDownloadUrl, CLIP_PREFIX } from "@/lib/blob";
+import { blobDownloadUrl, CLIP_PREFIX, putPublicClip } from "@/lib/blob";
 import { clipArgs, type ClipPreset, type TimeRange } from "@/lib/media/ffmpeg-args";
 import { createFfmpegSandbox, runFfmpeg, SANDBOX_WORKDIR } from "@/lib/media/ffmpeg-sandbox";
 
@@ -45,10 +44,7 @@ export async function exportClipFromUrl(
   const t2 = Date.now();
 
   // A unique folder keeps the readable filename, which becomes the download name.
-  const blob = await put(`${CLIP_PREFIX}${randomUUID()}/${filename}`, video, {
-    access: "public",
-    contentType: "video/mp4",
-  });
+  const blob = await putPublicClip(`${CLIP_PREFIX}${randomUUID()}/${filename}`, video, "video/mp4");
   const downloadUrl = blobDownloadUrl(blob.url);
 
   const timings: ClipTimings = { sandboxMs: t1 - t0, ffmpegMs: t2 - t1, uploadMs: Date.now() - t2 };

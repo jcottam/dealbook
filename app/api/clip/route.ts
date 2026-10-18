@@ -1,4 +1,4 @@
-import { blobStoreConfigured } from "@/lib/blob";
+import { blobStoreConfigured, publicClipsStoreConfigured } from "@/lib/blob";
 import { parseClipJson } from "@/lib/clip-validate";
 import { clipFilename, exportClipFromUrl } from "@/lib/media/export-clip";
 import { FfmpegError } from "@/lib/media/ffmpeg-sandbox";
@@ -22,6 +22,12 @@ export async function POST(req: Request) {
 
   if (!blobStoreConfigured()) {
     return Response.json({ error: "Connect a Vercel Blob store to enable clip export." }, { status: 501 });
+  }
+  if (!publicClipsStoreConfigured()) {
+    return Response.json(
+      { error: "Connect the media-utils-clips-public Blob store to enable public clip URLs." },
+      { status: 501 },
+    );
   }
 
   const { range, preset } = parsed;
@@ -51,7 +57,10 @@ export async function POST(req: Request) {
         { status: 422 },
       );
     }
-    console.error("clip failed", e instanceof Error ? e.message : e);
-    return Response.json({ error: "Clip export failed. Try again." }, { status: 500 });
+    const message = e instanceof Error ? e.message : "Clip export failed.";
+    console.error("clip failed", message);
+    const client =
+      message.includes("Vercel Blob") || message.includes("Blob store") ? message : "Clip export failed. Try again.";
+    return Response.json({ error: client }, { status: 500 });
   }
 }

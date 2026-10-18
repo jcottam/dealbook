@@ -26,4 +26,4 @@ export function formatSeconds(total: number): string {
   return `${m}:${pad(s)}`;
 }
 
-export const MAX_CLIP_SECONDS = 120;
+export const MAX_CLIP_SECONDS = 180;

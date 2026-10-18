@@ -40,7 +40,7 @@ describe("parseTranscribeJson", () => {
 
   it("rejects bad ranges and missing sources", () => {
     expect(parseTranscribeJson({ url: MIMIR, start: 10, end: 5 })).toMatchObject({ status: 400 });
-    expect(parseTranscribeJson({ url: MIMIR, start: 0, end: 121 })).toMatchObject({ status: 400 });
+    expect(parseTranscribeJson({ url: MIMIR, start: 0, end: 181 })).toMatchObject({ status: 400 });
     expect(parseTranscribeJson({ start: 0, end: 10 })).toMatchObject({ status: 400 });
     expect(parseTranscribeJson({ upload: "clips/x.mp4", start: 0, end: 10 })).toMatchObject({ status: 400 });
   });

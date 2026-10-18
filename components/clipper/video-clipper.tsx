@@ -327,7 +327,7 @@ export function VideoClipper() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Export preset</Label>
+              <Label>Export quality</Label>
               <div className="flex flex-col gap-2">
                 <Button
                   type="button"
@@ -335,7 +335,7 @@ export function VideoClipper() {
                   className="justify-start"
                   onClick={() => setPreset("team")}
                 >
-                  Team share (smaller H.264)
+                  Share quality
                 </Button>
                 <Button
                   type="button"
@@ -343,7 +343,7 @@ export function VideoClipper() {
                   className="justify-start"
                   onClick={() => setPreset("copy")}
                 >
-                  Fast trim (source quality, keyframe cut)
+                  Full quality
                 </Button>
               </div>
             </div>

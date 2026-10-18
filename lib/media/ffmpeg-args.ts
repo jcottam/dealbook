@@ -7,7 +7,7 @@ function seconds(n: number): string {
 }
 
 /**
- * Mono 16 kHz MP3 of the selection — small enough that two minutes stays around 1 MB,
+ * Mono 16 kHz MP3 of the selection — small enough that three minutes stays around 1.5 MB,
  * well under the 25 MB transcription upload limit.
  * `-ss` before `-i` seeks with HTTP range requests instead of reading from the start.
  */

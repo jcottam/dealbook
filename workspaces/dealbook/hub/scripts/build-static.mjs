@@ -1,13 +1,13 @@
 #!/usr/bin/env node
-// Builds a static site in public/ for Vercel, Cloudflare Pages, or any static host.
+// Builds a static site in hub/dist/ for Vercel, Cloudflare Pages, or any static host.
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { DATA_DIR, HUB_ROOT, PROJECT_ROOT, loadConfig } from '../lib/config.mjs';
+import { DATA_DIR, HUB_ROOT, WORKSPACE_ROOT, loadConfig } from '../lib/config.mjs';
 import { buildHubState } from '../lib/hub-state.mjs';
 import { buildData, writeData } from './build-data.mjs';
 
 const APP_DIR = resolve(HUB_ROOT, 'app');
-const OUT_DIR = resolve(PROJECT_ROOT, 'public');
+const OUT_DIR = resolve(HUB_ROOT, 'dist');
 
 function readJSON(file, fallback) {
   try {
@@ -42,7 +42,7 @@ const postsDoc = readJSON(resolve(DATA_DIR, 'posts.json'), { posts: [], throughl
 const research = readJSON(resolve(DATA_DIR, 'research.json'), { intro: null, speakers: [] });
 const assetMap = readJSON(resolve(DATA_DIR, 'asset-map.json'), { posts: {} }).posts || {};
 
-const mediaRoot = process.env.HUB_MEDIA_ROOT ? resolve(PROJECT_ROOT, process.env.HUB_MEDIA_ROOT) : config.mediaRoot;
+const mediaRoot = process.env.HUB_MEDIA_ROOT ? resolve(WORKSPACE_ROOT, process.env.HUB_MEDIA_ROOT) : config.mediaRoot;
 const hub = buildHubState({
   postsDoc,
   research,
@@ -88,4 +88,4 @@ writeFileSync(
 );
 writeFileSync(join(OUT_DIR, 'data', 'dataset.json'), readFileSync(resolve(DATA_DIR, 'dataset.json')));
 
-console.log(`Static site -> public/ (${hub.posts.length} posts, ${hub.assets.length} assets indexed)`);
+console.log(`Static site -> hub/dist/ (${hub.posts.length} posts, ${hub.assets.length} assets indexed)`);

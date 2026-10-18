@@ -1,21 +1,34 @@
-# DealBook
+# Media Utils
 
-Internal **Next.js admin** (clip tools, future hub). Editorial calendar data stays in `source/`; the legacy social hub SPA lives under `legacy/hub/`.
+A growing set of tools to package and prepare content for social media and production. Built with Next.js on Vercel; domain: [media-utils.com](https://media-utils.com).
 
 ## Repository layout
 
 | Path | Purpose |
 |------|---------|
-| `app/` | Next.js App Router (admin UI + API routes) |
-| `components/` | UI and tools (ShadCN) |
-| `source/` | Content calendar CSV, research HTML, sheet manifest |
-| `media/` | Local media library (gitignored; see `media/README.md`) |
-| `data/` | Generated JSON from CSV (`hub:legacy:build:data`) |
-| `schema/` | Post / platform-variant JSON Schema |
-| `legacy/hub/` | **Shelf** — original SPA + local server |
-| `public/` | Legacy static export output (gitignored) |
+| `app/` | Next.js App Router. Each tool is a route at `/<slug>` (`app/<slug>/page.tsx`); API routes under `app/api/` |
+| `components/` | Shared UI (ShadCN in `components/ui/`) and per-tool components (`components/<slug>/`) |
+| `lib/` | Shared logic. `lib/tools.ts` is the tool registry; `lib/media/` holds ffmpeg, Sandbox, and transcription helpers |
+| `scripts/` | CLI helpers (`try:*`, `sandbox:snapshot`) |
+| `workspaces/<name>/` | Content and tooling for one show or client. Currently `workspaces/dealbook/` |
 
-## Local development (Next admin)
+### Adding a tool
+
+1. Add an entry to `lib/tools.ts` (slug, title, description, icon). It shows up in the sidebar and dashboard.
+2. Create `app/<slug>/page.tsx` and put its components in `components/<slug>/`.
+3. Put any server routes under `app/api/`.
+
+### DealBook workspace
+
+| Path | Purpose |
+|------|---------|
+| `workspaces/dealbook/source/` | Content calendar CSV, research HTML, sheet manifest |
+| `workspaces/dealbook/data/` | JSON generated from the CSV (`pnpm dealbook:build:data`) |
+| `workspaces/dealbook/schema/` | Post / platform-variant JSON Schema |
+| `workspaces/dealbook/media/` | Local media library (gitignored; see its README) |
+| `workspaces/dealbook/hub/` | **Shelf**: original social hub SPA and local server |
+
+## Local development
 
 ```bash
 pnpm install
@@ -34,29 +47,21 @@ Both use the private Vercel Blob store `dealbook-clips`. Local files upload from
 
 `.env.example` lists the variables. To rebuild the ffmpeg snapshot, run `pnpm sandbox:snapshot` and update `FFMPEG_SNAPSHOT_ID` in Vercel.
 
-## Legacy social hub
+## DealBook commands
 
 ```bash
-pnpm hub:legacy:build:data
-pnpm hub:legacy:start    # http://127.0.0.1:4173
+pnpm dealbook:sync         # Google Sheet → source/content-calendar.csv + data/*.json
+pnpm dealbook:hub:start    # legacy hub with local media at http://127.0.0.1:4173
 ```
 
-See `legacy/hub/README.md`.
+Sheet manifest: **`workspaces/dealbook/source/calendar-source.json`**. Details in **`AGENTS.md`** and `workspaces/dealbook/hub/README.md`.
 
-## Content calendar (Google Sheets)
-
-```bash
-pnpm sync:calendar
-```
-
-Sheet URL and manifest: **`source/calendar-source.json`**. Details in **`AGENTS.md`**.
-
-## Tests
+## Checks
 
 ```bash
-pnpm test    # legacy hub tests + Vitest for lib/
+pnpm check   # lint, typecheck, DealBook hub tests, Vitest for lib/
 ```
 
 ## Deploy
 
-Primary app: **Next.js** on Vercel or Cloudflare (Zero Trust in front when ready). Legacy static hub: `pnpm hub:legacy:build` → `public/`.
+The Next.js app deploys to Vercel from `main`. The legacy DealBook hub is local-only; `pnpm dealbook:hub:build` writes a static copy to `workspaces/dealbook/hub/dist/` if you need one.

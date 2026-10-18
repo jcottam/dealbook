@@ -5,13 +5,13 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const MANIFEST = resolve(PROJECT_ROOT, 'source/calendar-source.json');
+const WORKSPACE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const MANIFEST = resolve(WORKSPACE_ROOT, 'source/calendar-source.json');
 
 function loadManifest() {
   const m = JSON.parse(readFileSync(MANIFEST, 'utf8'));
   if (!m.spreadsheetId || !m.gid) throw new Error(`Invalid ${MANIFEST}: need spreadsheetId and gid`);
-  const output = resolve(PROJECT_ROOT, m.output || 'source/content-calendar.csv');
+  const output = resolve(WORKSPACE_ROOT, m.output || 'source/content-calendar.csv');
   const exportUrl = `https://docs.google.com/spreadsheets/d/${m.spreadsheetId}/export?format=csv&gid=${m.gid}`;
   return { ...m, output, exportUrl };
 }
@@ -74,7 +74,7 @@ async function main() {
   if (!quiet) {
     console.log(`Wrote ${output} (${csv.length} bytes)`);
     console.log(`Sheet: ${editUrl}`);
-    console.log('Next: pnpm hub:legacy:build   # static site, or pnpm hub:legacy:start for the local hub');
+    console.log('Next: pnpm dealbook:hub:build   # static site, or pnpm dealbook:hub:start for the local hub');
   }
 }
 

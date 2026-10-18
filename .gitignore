@@ -1,6 +1,6 @@
-# Local media library (see media/README.md)
-media/**
-!media/README.md
+# Local media libraries (see workspaces/<name>/media/README.md)
+workspaces/*/media/**
+!workspaces/*/media/README.md
 
 # Stray binaries at repo root
 *.jpg
@@ -17,10 +17,10 @@ media/**
 # Generated
 .cache/
 .next/
-public/
-data/posts.json
-data/research.json
-data/dataset.json
+workspaces/*/hub/dist/
+workspaces/dealbook/data/posts.json
+workspaces/dealbook/data/research.json
+workspaces/dealbook/data/dataset.json
 
 # OS / tooling
 .DS_Store

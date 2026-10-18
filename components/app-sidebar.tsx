@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Film, LayoutDashboard, Scissors } from "lucide-react";
+import { Film, LayoutDashboard } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,14 +15,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-
-const tools = [
-  {
-    title: "Video clipper",
-    href: "/tools/clipper",
-    icon: Scissors,
-  },
-];
+import { toolHref, tools } from "@/lib/tools";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -38,8 +31,8 @@ export function AppSidebar() {
                   <Film className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">DealBook</span>
-                  <span className="truncate text-xs text-muted-foreground">Admin</span>
+                  <span className="truncate font-semibold">Media Utils</span>
+                  <span className="truncate text-xs text-muted-foreground">Production tools</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -66,16 +59,19 @@ export function AppSidebar() {
           <SidebarGroupLabel>Tools</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {tools.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton asChild isActive={pathname === item.href}>
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {tools.map((tool) => {
+                const href = toolHref(tool);
+                return (
+                  <SidebarMenuItem key={tool.slug}>
+                    <SidebarMenuButton asChild isActive={pathname === href || pathname.startsWith(`${href}/`)}>
+                      <Link href={href}>
+                        <tool.icon />
+                        <span>{tool.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

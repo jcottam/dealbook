@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { extname, isAbsolute, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { buildData, writeData } from '../scripts/build-data.mjs';
-import { DATA_DIR, HUB_ROOT, PROJECT_ROOT, loadConfig, saveConfig } from '../lib/config.mjs';
+import { DATA_DIR, HUB_ROOT, WORKSPACE_ROOT, loadConfig, saveConfig } from '../lib/config.mjs';
 import { buildHubState } from '../lib/hub-state.mjs';
 import { IMAGE_EXT, VIDEO_EXT } from '../lib/scan.mjs';
 
@@ -17,7 +17,7 @@ const { values: args } = parseArgs({
 
 let config = loadConfig({ mediaRoot: args.media, port: args.port && +args.port, host: args.host });
 const APP_DIR = resolve(HUB_ROOT, 'app');
-const THUMB_DIR = resolve(PROJECT_ROOT, '.cache', 'thumbs');
+const THUMB_DIR = resolve(WORKSPACE_ROOT, '.cache', 'thumbs');
 const HAS_FFMPEG = spawnSync('ffmpeg', ['-version'], { stdio: 'ignore' }).status === 0;
 
 const MIME = {
@@ -259,10 +259,10 @@ async function handle(req, res) {
   }
   if (path === '/api/config' && req.method === 'POST') {
     const body = await readBody(req);
-    const root = body.mediaRoot ? resolve(PROJECT_ROOT, String(body.mediaRoot).replace(/^~(?=\/|$)/, process.env.HOME)) : null;
+    const root = body.mediaRoot ? resolve(WORKSPACE_ROOT, String(body.mediaRoot).replace(/^~(?=\/|$)/, process.env.HOME)) : null;
     if (!root || !existsSync(root) || !statSync(root).isDirectory()) return send(res, 400, { error: `Not a directory: ${body.mediaRoot}` });
     config = { ...config, mediaRoot: root };
-    saveConfig({ mediaRoot: relative(PROJECT_ROOT, root) || '.' });
+    saveConfig({ mediaRoot: relative(WORKSPACE_ROOT, root) || '.' });
     refresh();
     return send(res, 200, { ok: true, mediaRoot: root, assets: state.assets.length });
   }

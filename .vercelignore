@@ -1,7 +1,8 @@
 # Local media (hundreds of MB) — not part of deploy. Anchored so lib/media/ still ships.
-/media/
+/workspaces/*/media/
+/workspaces/*/hub/dist/
 
-/.cache/
+.cache/
 node_modules/
 .DS_Store
 .env*

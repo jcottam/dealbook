@@ -15,8 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DealBook Admin",
-  description: "DealBook internal tools",
+  title: {
+    default: "Media Utils",
+    template: "%s · Media Utils",
+  },
+  description: "Tools to package and prepare content for social and production",
 };
 
 export default function RootLayout({

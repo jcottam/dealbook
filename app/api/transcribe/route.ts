@@ -1,3 +1,4 @@
+import { isAiGatewayConfigured } from "@/lib/ai-gateway";
 import { parseTranscribeJson } from "@/lib/clip-validate";
 import { FfmpegError } from "@/lib/media/ffmpeg-sandbox";
 import { resolveSource } from "@/lib/media/source";
@@ -19,8 +20,11 @@ export async function POST(req: Request) {
     return Response.json({ error: parsed.error }, { status: parsed.status });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return Response.json({ error: "Set OPENAI_API_KEY to enable transcription." }, { status: 501 });
+  if (!isAiGatewayConfigured()) {
+    return Response.json(
+      { error: "Set AI_GATEWAY_API_KEY (or deploy on Vercel with OIDC) to enable transcription." },
+      { status: 501 },
+    );
   }
 
   const { range } = parsed;

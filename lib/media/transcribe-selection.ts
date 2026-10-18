@@ -1,5 +1,5 @@
-import { openai } from "@ai-sdk/openai";
 import { transcribe } from "ai";
+import { transcribeGatewayModelId } from "@/lib/ai-gateway";
 import { audioExtractArgs, type TimeRange } from "@/lib/media/ffmpeg-args";
 import { createFfmpegSandbox, runFfmpeg, SANDBOX_WORKDIR } from "@/lib/media/ffmpeg-sandbox";
 
@@ -27,7 +27,6 @@ export async function extractAudioFromUrl(url: string, range: TimeRange) {
 }
 
 export async function transcribeAudio(audio: Uint8Array) {
-  const model = process.env.TRANSCRIBE_MODEL || "gpt-4o-transcribe";
-  const result = await transcribe({ model: openai.transcription(model), audio });
+  const result = await transcribe({ model: transcribeGatewayModelId(), audio });
   return { text: result.text, language: result.language ?? null };
 }

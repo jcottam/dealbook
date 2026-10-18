@@ -22,7 +22,7 @@ pnpm install
 pnpm dev          # http://localhost:3000
 ```
 
-Clip and transcribe run ffmpeg in [Vercel Sandbox](https://vercel.com/docs/sandbox). Environment variables live in the Vercel project; pull them into `.env.local`. A pull rewrites the whole file, so re-add any values you set only locally (such as `OPENAI_API_KEY`) afterwards:
+Clip and transcribe run ffmpeg in [Vercel Sandbox](https://vercel.com/docs/sandbox). Environment variables live in the Vercel project; pull them into `.env.local`. A pull rewrites the whole file, so re-add any values you set only locally (such as `AI_GATEWAY_API_KEY`) afterwards. Transcription uses [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) (`AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN` on deployed builds):
 
 ```bash
 vercel env pull .env.local   # project env (Development target) + Sandbox auth token, ~12 h

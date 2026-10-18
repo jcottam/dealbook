@@ -13,8 +13,8 @@ const t0 = Date.now();
 const { audio, timings } = await extractAudioFromUrl(url, range);
 console.log(`audio: ${(audio.length / 1024).toFixed(0)} KB`, timings);
 
-if (!process.env.OPENAI_API_KEY) {
-  console.log("OPENAI_API_KEY not set; skipping transcription.");
+if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN) {
+  console.log("AI_GATEWAY_API_KEY (or VERCEL_OIDC_TOKEN) not set; skipping transcription.");
 } else {
   const t1 = Date.now();
   const { text, language } = await transcribeAudio(audio);

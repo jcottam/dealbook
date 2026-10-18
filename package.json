@@ -11,6 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
     "sync:calendar": "node legacy/hub/scripts/sync-calendar.mjs && node legacy/hub/scripts/build-data.mjs",
     "sync:calendar:dry": "node legacy/hub/scripts/sync-calendar.mjs --dry-run",
     "hub:legacy:start": "node legacy/hub/server/server.mjs",

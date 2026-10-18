@@ -9,10 +9,10 @@ The **product app** is **Next.js at the repo root** (`app/`, `components/`). The
 | Layer | What | Who edits |
 |-------|------|-----------|
 | **1. Google Sheet** | Live content calendar (dates, copy, platforms, column J/K/L, etc.) | Editorial / ops in Sheets |
-| **2. `source/content-calendar.csv`** | Committed snapshot used by builds and tests | Pulled via `npm run sync:calendar` (do not hand-edit unless fixing an export emergency) |
+| **2. `source/content-calendar.csv`** | Committed snapshot used by builds and tests | Pulled via `pnpm sync:calendar` (do not hand-edit unless fixing an export emergency) |
 | **3. `source/research/`** | Speaker one-pagers HTML | Editorial; committed in Git |
-| **4. `data/*.json`** | Generated posts, research merge, dataset | Never edit; run `npm run hub:legacy:build:data` |
-| **5. `public/`** | Legacy static hub output | Never edit; run `npm run hub:legacy:build` |
+| **4. `data/*.json`** | Generated posts, research merge, dataset | Never edit; run `pnpm hub:legacy:build:data` |
+| **5. `public/`** | Legacy static hub output | Never edit; run `pnpm hub:legacy:build` |
 
 Manifest for the sheet (IDs, tab `gid`, paths): **`source/calendar-source.json`**.
 
@@ -24,33 +24,33 @@ Manifest for the sheet (IDs, tab `gid`, paths): **`source/calendar-source.json`*
 ## Refresh calendar from Google Sheets
 
 ```bash
-npm run sync:calendar          # sheet → source/content-calendar.csv + data/*.json
-npm run sync:calendar:dry      # preview CSV changes only (no build)
-npm run hub:legacy:build       # after sync, rebuild legacy static site → public/
+pnpm sync:calendar          # sheet → source/content-calendar.csv + data/*.json
+pnpm sync:calendar:dry      # preview CSV changes only (no build)
+pnpm hub:legacy:build       # after sync, rebuild legacy static site → public/
 ```
 
-After refreshing, run **`npm test`** before committing CSV changes.
+After refreshing, run **`pnpm test`** before committing CSV changes.
 
 Typical commit message when only the sheet changed: `chore: sync content calendar from Google Sheets`.
 
 ## Local workflow (scale)
 
-Use npm scripts as the supported “local scale” — avoid one-off paths:
+The package manager is **pnpm** (pinned in `package.json` `packageManager`). Don't use npm or commit a `package-lock.json`. Use package scripts as the supported “local scale” — avoid one-off paths:
 
 | Goal | Command |
 |------|---------|
-| Pull latest sheet | `npm run sync:calendar` |
-| Regenerate JSON from `source/` | `npm run hub:legacy:build:data` |
-| Next admin dev server | `npm run dev` |
-| Full legacy static site | `npm run hub:legacy:build` |
+| Pull latest sheet | `pnpm sync:calendar` |
+| Regenerate JSON from `source/` | `pnpm hub:legacy:build:data` |
+| Next admin dev server | `pnpm dev` |
+| Full legacy static site | `pnpm hub:legacy:build` |
 | Local legacy hub with media | `hub:legacy:build:data` then `hub:legacy:start` |
-| Tests | `npm test` |
+| Tests | `pnpm test` |
 
 Environment overrides (unchanged): `HUB_MEDIA_ROOT` at build time to index a non-default media directory.
 
 ## Deploy
 
-**Next admin** deploys as a Next.js app (`npm run build`). The **legacy hub** remains static (`npm run hub:legacy:build` → `public/`). Calendar deploys use **committed** `source/content-calendar.csv`, not live Sheets. To ship sheet changes: sync → commit CSV → push.
+**Next admin** deploys as a Next.js app (`pnpm build`). The **legacy hub** remains static (`pnpm hub:legacy:build` → `public/`). Calendar deploys use **committed** `source/content-calendar.csv`, not live Sheets. To ship sheet changes: sync → commit CSV → push.
 
 ## How to update documentation
 
@@ -59,7 +59,7 @@ Environment overrides (unchanged): `HUB_MEDIA_ROOT` at build time to index a non
 Update when **user-facing behavior or commands** change:
 
 - Repository layout table → new top-level dirs or changed roles of `source/`, `media/`, `data/`, `public/`
-- Install / dev / deploy steps → new npm scripts or hosting fields
+- Install / dev / deploy steps → new package scripts or hosting fields
 - What deploy includes vs local-only features
 
 Keep README short. Link to **`AGENTS.md`** for source-of-truth hierarchy and agent workflows.

@@ -16,8 +16,8 @@
     "hub:legacy:start": "node legacy/hub/server/server.mjs",
     "hub:legacy:build": "node legacy/hub/scripts/build-data.mjs && node legacy/hub/scripts/build-static.mjs",
     "hub:legacy:build:data": "node legacy/hub/scripts/build-data.mjs",
-    "hub:legacy:preview": "npx --yes serve public -l 4173",
-    "test": "npm run test:legacy && npm run test:app",
+    "hub:legacy:preview": "pnpm dlx serve public -l 4173",
+    "test": "pnpm test:legacy && pnpm test:app",
     "test:legacy": "node --test \"legacy/hub/test/*.test.mjs\"",
     "test:app": "vitest run"
   },
@@ -50,5 +50,6 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vitest": "^5.0.5"
-  }
+  },
+  "packageManager": "pnpm@11.28.5"
 }

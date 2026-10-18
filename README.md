@@ -18,8 +18,8 @@ Internal **Next.js admin** (clip tools, future hub). Editorial calendar data sta
 ## Local development (Next admin)
 
 ```bash
-npm install
-npm run dev          # http://localhost:3000
+pnpm install
+pnpm dev          # http://localhost:3000
 ```
 
 Copy `.env.example` to `.env.local` when wiring clip/transcribe APIs.
@@ -27,8 +27,8 @@ Copy `.env.example` to `.env.local` when wiring clip/transcribe APIs.
 ## Legacy social hub
 
 ```bash
-npm run hub:legacy:build:data
-npm run hub:legacy:start    # http://127.0.0.1:4173
+pnpm hub:legacy:build:data
+pnpm hub:legacy:start    # http://127.0.0.1:4173
 ```
 
 See `legacy/hub/README.md`.
@@ -36,7 +36,7 @@ See `legacy/hub/README.md`.
 ## Content calendar (Google Sheets)
 
 ```bash
-npm run sync:calendar
+pnpm sync:calendar
 ```
 
 Sheet URL and manifest: **`source/calendar-source.json`**. Details in **`AGENTS.md`**.
@@ -44,9 +44,9 @@ Sheet URL and manifest: **`source/calendar-source.json`**. Details in **`AGENTS.
 ## Tests
 
 ```bash
-npm test    # legacy hub parsing/calendar tests
+pnpm test    # legacy hub tests + Vitest for lib/
 ```
 
 ## Deploy
 
-Primary app: **Next.js** on Vercel or Cloudflare (Zero Trust in front when ready). Legacy static hub: `npm run hub:legacy:build` → `public/`.
+Primary app: **Next.js** on Vercel or Cloudflare (Zero Trust in front when ready). Legacy static hub: `pnpm hub:legacy:build` → `public/`.

@@ -95,7 +95,7 @@ async function openSettings() {
         <dt>Editorial research</dt><dd class="mono small">${esc(meta.source?.research || '—')}</dd>
         <dt>Data generated</dt><dd>${meta.generatedAt ? new Date(meta.generatedAt).toLocaleString() : '—'}</dd>
         <dt>Indexed media</dt><dd>${meta.assets ?? store.assets.length} files at build time${meta.mediaRoot ? ` · ${esc(meta.mediaRoot)}` : ' (no media root on host)'}</dd>
-        <dt>Local hub</dt><dd class="small">Run <code>npm start</code> on your machine for live media, thumbnails, and rescan.</dd>`;
+        <dt>Local hub</dt><dd class="small">Run <code>pnpm hub:legacy:start</code> on your machine for live media, thumbnails, and rescan.</dd>`;
     } else {
       const cfg = await api('/api/config');
       dialog.querySelector('[name=mediaRoot]').value = cfg.mediaRoot;

@@ -7,9 +7,9 @@ Frozen **vanilla SPA + local Node server** that powered the original DealBook re
 From the **repo root**:
 
 ```bash
-npm run hub:legacy:start    # API + media + SPA at http://127.0.0.1:4173
-npm run hub:legacy:build    # static site → public/ (old Vercel flow)
-npm run hub:legacy:test     # calendar / parsing tests
+pnpm hub:legacy:start    # API + media + SPA at http://127.0.0.1:4173
+pnpm hub:legacy:build    # static site → public/ (old Vercel flow)
+pnpm test:legacy         # calendar / parsing tests
 ```
 
 `source/`, `media/`, and `data/` remain at the repo root; paths in `hub.config.json` are relative to the monorepo root.

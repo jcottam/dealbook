@@ -18,6 +18,6 @@ media/
       …
 ```
 
-Files in this tree are **not** committed to Git (see root `.gitignore`). Point the hub at this folder via **Settings → Media root** (`media` by default in `hub.config.json`) or run `npm start` after cloning.
+Files in this tree are **not** committed to Git (see root `.gitignore`). Point the hub at this folder via **Settings → Media root** (`media` by default in `hub.config.json`) or run `pnpm hub:legacy:start` after cloning.
 
 Finished cuts often live in `_finished/`, `finished/`, or `delivery/` subfolders inside a post directory.

@@ -1,7 +1,10 @@
 import { isAllowedClipUrl } from "@/lib/clip-url";
+import { FfmpegError } from "@/lib/media/ffmpeg-sandbox";
+import { extractAudioFromUrl, transcribeAudio } from "@/lib/media/transcribe-selection";
 import { MAX_CLIP_SECONDS } from "@/lib/timecode";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
 
 type TranscribeBody = {
   url?: string;
@@ -10,7 +13,7 @@ type TranscribeBody = {
 };
 
 function validateRange(start: number, end: number) {
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end <= start) {
     return "Invalid start/end";
   }
   if (end - start > MAX_CLIP_SECONDS) {
@@ -23,13 +26,8 @@ export async function POST(req: Request) {
   const contentType = req.headers.get("content-type") ?? "";
 
   if (contentType.includes("multipart/form-data")) {
-    const form = await req.formData();
-    const start = Number(form.get("start"));
-    const end = Number(form.get("end"));
-    const err = validateRange(start, end);
-    if (err) return Response.json({ error: err }, { status: 400 });
     return Response.json(
-      { error: "Transcription requires TRANSCRIBE_PROVIDER and ffmpeg audio extract (not configured yet)." },
+      { error: "Transcribing uploaded files isn't available yet. Paste a video URL instead." },
       { status: 501 },
     );
   }
@@ -52,15 +50,31 @@ export async function POST(req: Request) {
     return Response.json({ error: "URL host is not allowlisted" }, { status: 403 });
   }
 
-  if (!process.env.OPENAI_API_KEY && !process.env.ELEVENLABS_API_KEY) {
-    return Response.json(
-      { error: "Set OPENAI_API_KEY or ELEVENLABS_API_KEY to enable transcription." },
-      { status: 501 },
-    );
+  if (!process.env.OPENAI_API_KEY) {
+    return Response.json({ error: "Set OPENAI_API_KEY to enable transcription." }, { status: 501 });
   }
 
-  return Response.json(
-    { error: "Transcription pipeline stub: extract audio for the selected range, then call your STT provider." },
-    { status: 501 },
-  );
+  try {
+    const { audio, timings } = await extractAudioFromUrl(url, { start, end });
+    const t0 = Date.now();
+    const { text, language } = await transcribeAudio(audio);
+    const result = {
+      text,
+      language,
+      durationSec: end - start,
+      audioBytes: audio.length,
+      timings: { ...timings, transcribeMs: Date.now() - t0 },
+    };
+    console.info("transcribe", { host: new URL(url).hostname, ...result, text: undefined });
+    return Response.json(result);
+  } catch (e) {
+    if (e instanceof FfmpegError) {
+      return Response.json(
+        { error: `Couldn't read that part of the video: ${e.message}` },
+        { status: 422 },
+      );
+    }
+    console.error("transcribe failed", e instanceof Error ? e.message : e);
+    return Response.json({ error: "Transcription failed. Try again." }, { status: 500 });
+  }
 }

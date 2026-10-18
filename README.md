@@ -22,7 +22,15 @@ pnpm install
 pnpm dev          # http://localhost:3000
 ```
 
-Copy `.env.example` to `.env.local` when wiring clip/transcribe APIs.
+Clip and transcribe run ffmpeg in [Vercel Sandbox](https://vercel.com/docs/sandbox). For local use:
+
+```bash
+vercel env pull .env.local   # Sandbox auth token (re-pull when it expires, ~12 h)
+pnpm sandbox:snapshot        # one-time: VM snapshot with ffmpeg; set FFMPEG_SNAPSHOT_ID
+pnpm try:transcribe '<url>' 60 120   # extract + transcribe a range from the CLI
+```
+
+See `.env.example` for the other variables (`OPENAI_API_KEY`, `CLIP_ALLOWED_HOSTS`).
 
 ## Legacy social hub
 

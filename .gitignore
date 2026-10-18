@@ -28,3 +28,8 @@ node_modules/
 .vercel
 .env*
 !.env.example
+
+# TypeScript
+*.tsbuildinfo
+.pnpm-store/
+next-env.d.ts

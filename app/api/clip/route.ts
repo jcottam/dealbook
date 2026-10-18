@@ -12,12 +12,7 @@ export async function POST(req: Request) {
     if ("error" in parsed) {
       return Response.json({ error: parsed.error }, { status: 400 });
     }
-    return Response.json(
-      {
-        error: "Local file clipping is not wired yet. Use a Mimir proxy URL, or we will add ffmpeg.wasm for uploads.",
-      },
-      { status: 501 },
-    );
+    return Response.json({ error: "Clip export isn't available yet." }, { status: 501 });
   }
 
   let body: unknown;
@@ -36,12 +31,5 @@ export async function POST(req: Request) {
     return Response.json({ error: "URL host is not allowlisted for clipping" }, { status: 403 });
   }
 
-  return Response.json(
-    {
-      error:
-        "Server-side ffmpeg clipping is not configured on this deployment yet. Set up ffmpeg on the host (or a clip worker) and implement streaming export in app/api/clip/route.ts.",
-      hint: { urlHost: new URL(parsed.url!).hostname, start: parsed.start, end: parsed.end, preset: parsed.preset },
-    },
-    { status: 501 },
-  );
+  return Response.json({ error: "Clip export isn't available yet." }, { status: 501 });
 }

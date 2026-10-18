@@ -22,15 +22,14 @@ pnpm install
 pnpm dev          # http://localhost:3000
 ```
 
-Clip and transcribe run ffmpeg in [Vercel Sandbox](https://vercel.com/docs/sandbox). For local use:
+Clip and transcribe run ffmpeg in [Vercel Sandbox](https://vercel.com/docs/sandbox). Environment variables live in the Vercel project; pull them into `.env.local`. A pull rewrites the whole file, so re-add any values you set only locally (such as `OPENAI_API_KEY`) afterwards:
 
 ```bash
-vercel env pull .env.local   # Sandbox auth token (re-pull when it expires, ~12 h)
-pnpm sandbox:snapshot        # one-time: VM snapshot with ffmpeg; set FFMPEG_SNAPSHOT_ID
+vercel env pull .env.local   # project env (Development target) + Sandbox auth token, ~12 h
 pnpm try:transcribe '<url>' 60 120   # extract + transcribe a range from the CLI
 ```
 
-See `.env.example` for the other variables (`OPENAI_API_KEY`, `CLIP_ALLOWED_HOSTS`).
+`.env.example` lists the variables. To rebuild the ffmpeg snapshot, run `pnpm sandbox:snapshot` and update `FFMPEG_SNAPSHOT_ID` in Vercel.
 
 ## Legacy social hub
 

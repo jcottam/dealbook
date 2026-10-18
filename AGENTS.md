@@ -1,6 +1,8 @@
-# Agent guide — DealBook Social Hub
+# Agent guide — DealBook
 
 Instructions for humans and coding agents working in this repo.
+
+The **product app** is **Next.js at the repo root** (`app/`, `components/`). The original social hub is frozen under **`legacy/hub/`**; cherry-pick features into Next rather than extending the SPA.
 
 ## Source of truth (data)
 
@@ -9,8 +11,8 @@ Instructions for humans and coding agents working in this repo.
 | **1. Google Sheet** | Live content calendar (dates, copy, platforms, column J/K/L, etc.) | Editorial / ops in Sheets |
 | **2. `source/content-calendar.csv`** | Committed snapshot used by builds and tests | Pulled via `npm run sync:calendar` (do not hand-edit unless fixing an export emergency) |
 | **3. `source/research/`** | Speaker one-pagers HTML | Editorial; committed in Git |
-| **4. `data/*.json`** | Generated posts, research merge, dataset | Never edit; run `npm run build:data` |
-| **5. `public/`** | Static site output | Never edit; run `npm run build` |
+| **4. `data/*.json`** | Generated posts, research merge, dataset | Never edit; run `npm run hub:legacy:build:data` |
+| **5. `public/`** | Legacy static hub output | Never edit; run `npm run hub:legacy:build` |
 
 Manifest for the sheet (IDs, tab `gid`, paths): **`source/calendar-source.json`**.
 
@@ -24,7 +26,7 @@ Manifest for the sheet (IDs, tab `gid`, paths): **`source/calendar-source.json`*
 ```bash
 npm run sync:calendar          # sheet → source/content-calendar.csv + data/*.json
 npm run sync:calendar:dry      # preview CSV changes only (no build)
-npm run refresh                # sync:calendar + static site (public/)
+npm run hub:legacy:build       # after sync, rebuild legacy static site → public/
 ```
 
 After refreshing, run **`npm test`** before committing CSV changes.
@@ -38,17 +40,17 @@ Use npm scripts as the supported “local scale” — avoid one-off paths:
 | Goal | Command |
 |------|---------|
 | Pull latest sheet | `npm run sync:calendar` |
-| Regenerate JSON from `source/` | `npm run build:data` |
-| Full static site | `npm run build` |
-| Local hub with media | `npm run build:data` then `npm start` |
-| Static preview only | `npm run build` then `npm run preview` |
+| Regenerate JSON from `source/` | `npm run hub:legacy:build:data` |
+| Next admin dev server | `npm run dev` |
+| Full legacy static site | `npm run hub:legacy:build` |
+| Local legacy hub with media | `hub:legacy:build:data` then `hub:legacy:start` |
 | Tests | `npm test` |
 
 Environment overrides (unchanged): `HUB_MEDIA_ROOT` at build time to index a non-default media directory.
 
 ## Deploy
 
-Production is **static** on Vercel (`vercel.json`: `npm run build`, output `public/`). Deploys use **committed** `source/content-calendar.csv`, not live Sheets. To ship sheet changes: sync → commit CSV → push (Vercel rebuilds).
+**Next admin** deploys as a Next.js app (`npm run build`). The **legacy hub** remains static (`npm run hub:legacy:build` → `public/`). Calendar deploys use **committed** `source/content-calendar.csv`, not live Sheets. To ship sheet changes: sync → commit CSV → push.
 
 ## How to update documentation
 
@@ -80,8 +82,8 @@ Update only for **on-disk media layout** conventions.
 
 ## Code touchpoints for calendar changes
 
-- **Parse/build:** `scripts/build-data.mjs`, `lib/csv.mjs`, `lib/parse-source.mjs`, `lib/post-model.mjs`
-- **Tests:** `test/calendar.test.mjs`, `test/parsing.test.mjs`
-- **Frontend:** `app/` (consumes built JSON only)
+- **Parse/build:** `legacy/hub/scripts/build-data.mjs`, `legacy/hub/lib/csv.mjs`, `legacy/hub/lib/parse-source.mjs`, `legacy/hub/lib/post-model.mjs`
+- **Tests:** `legacy/hub/test/calendar.test.mjs`, `legacy/hub/test/parsing.test.mjs`
+- **Next UI:** root `app/` (admin); hub features rebuilt here over time
 
-If column layout in the sheet changes, update `COL` in `build-data.mjs` and tests together.
+If column layout in the sheet changes, update `COL` in `legacy/hub/scripts/build-data.mjs` and tests together.

@@ -16,6 +16,7 @@ media/**
 
 # Generated
 .cache/
+.next/
 public/
 data/posts.json
 data/research.json
@@ -26,3 +27,4 @@ data/dataset.json
 node_modules/
 .vercel
 .env*
+!.env.example

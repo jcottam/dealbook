@@ -26,4 +26,16 @@ export function formatSeconds(total: number): string {
   return `${m}:${pad(s)}`;
 }
 
+/** Fixed-width timecode for clip duration display (`HH:MM:SS.mmm`). */
+export function formatTimecodeHmsMs(total: number): string {
+  const clamped = Math.max(0, total);
+  const h = Math.floor(clamped / 3600);
+  const m = Math.floor((clamped % 3600) / 60);
+  const s = Math.floor(clamped % 60);
+  const ms = Math.round((clamped % 1) * 1000);
+  const pad2 = (n: number) => String(n).padStart(2, "0");
+  const pad3 = (n: number) => String(n).padStart(3, "0");
+  return `${pad2(h)}:${pad2(m)}:${pad2(s)}.${pad3(ms)}`;
+}
+
 export const MAX_CLIP_SECONDS = 180;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatSeconds, parseTimeToSeconds } from "@/lib/timecode";
+import { formatSeconds, formatTimecodeHmsMs, parseTimeToSeconds } from "@/lib/timecode";
 
 describe("parseTimeToSeconds", () => {
   it("parses M:SS and H:MM:SS", () => {
@@ -17,6 +17,13 @@ describe("parseTimeToSeconds", () => {
     expect(parseTimeToSeconds("90")).toBeNull();
     expect(parseTimeToSeconds("1:75")).toBeNull();
     expect(parseTimeToSeconds("a:bc")).toBeNull();
+  });
+});
+
+describe("formatTimecodeHmsMs", () => {
+  it("formats with hours, minutes, seconds, and milliseconds", () => {
+    expect(formatTimecodeHmsMs(4.056)).toBe("00:00:04.056");
+    expect(formatTimecodeHmsMs(3723.5)).toBe("01:02:03.500");
   });
 });
 

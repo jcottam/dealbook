@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { upload as uploadToBlob } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
-import { formatSeconds, MAX_CLIP_SECONDS, parseTimeToSeconds } from "@/lib/timecode";
+import { formatSeconds, formatTimecodeHmsMs, MAX_CLIP_SECONDS, parseTimeToSeconds } from "@/lib/timecode";
 import { blobDownloadUrl } from "@/lib/blob-download-url";
 import { parsePresignedMeta } from "@/lib/clip-url";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,7 @@ type UploadState = { status: "uploading"; pct: number } | { status: "done" } | {
 type PendingUpload = { file: File; promise: Promise<string>; abort: AbortController };
 
 const MULTIPART_THRESHOLD_BYTES = 100 * 1024 * 1024;
+const VIDEO_KEY_SEEK_SECONDS = 5;
 
 /** Shared card chrome so header/body spacing matches across the clipper layout. */
 const CLIPPER_CARD = "gap-0 py-0";
@@ -31,6 +32,7 @@ const CLIPPER_CARD_CONTENT = "pb-6 pt-4 space-y-4";
 export function VideoClipper() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const stopClipPreviewRef = useRef<(() => void) | null>(null);
 
   const [urlInput, setUrlInput] = useState("");
   const [sourceKind, setSourceKind] = useState<SourceKind | null>(null);
@@ -174,6 +176,41 @@ export function VideoClipper() {
     else setEndTime(label);
   };
 
+  const stopClipPreview = useCallback(() => {
+    stopClipPreviewRef.current?.();
+    stopClipPreviewRef.current = null;
+  }, []);
+
+  useEffect(() => () => stopClipPreview(), [stopClipPreview, previewSrc]);
+
+  useEffect(() => {
+    if (!previewSrc) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (shouldIgnoreClipperVideoShortcut(event)) return;
+
+      const video = videoRef.current;
+      if (!video || document.activeElement === video) return;
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        if (video.paused) void video.play().catch(() => {});
+        else video.pause();
+        return;
+      }
+
+      if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        event.preventDefault();
+        const delta = event.key === "ArrowLeft" ? -VIDEO_KEY_SEEK_SECONDS : VIDEO_KEY_SEEK_SECONDS;
+        const maxTime = Number.isFinite(video.duration) ? video.duration : Number.POSITIVE_INFINITY;
+        video.currentTime = Math.min(maxTime, Math.max(0, video.currentTime + delta));
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [previewSrc]);
+
   const validateSelection = (): { start: number; end: number } | null => {
     const start = parseTimeToSeconds(startTime);
     const end = parseTimeToSeconds(endTime);
@@ -192,6 +229,55 @@ export function VideoClipper() {
     }
     return { start, end };
   };
+
+  const previewSelection = useCallback(() => {
+    const range = validateSelection();
+    const v = videoRef.current;
+    if (!range || !v) return;
+
+    stopClipPreview();
+
+    const { start, end } = range;
+    const endAt =
+      Number.isFinite(v.duration) && v.duration > 0 ? Math.min(end, v.duration) : end;
+
+    const onTimeUpdate = () => {
+      if (v.currentTime >= endAt - 0.05) {
+        v.pause();
+        v.currentTime = endAt;
+        stopClipPreview();
+      }
+    };
+
+    const onPause = () => {
+      if (v.currentTime < endAt - 0.05) stopClipPreview();
+    };
+
+    const cleanup = () => {
+      v.removeEventListener("timeupdate", onTimeUpdate);
+      v.removeEventListener("pause", onPause);
+      stopClipPreviewRef.current = null;
+    };
+
+    const armPreview = () => {
+      stopClipPreviewRef.current = cleanup;
+      v.addEventListener("timeupdate", onTimeUpdate);
+      v.addEventListener("pause", onPause);
+    };
+
+    const playFromStart = () => {
+      armPreview();
+      void v.play().catch(() => toast.error("Could not start preview playback."));
+    };
+
+    // Pause before arming listeners so this pause does not run onPause and drop the end bound.
+    v.pause();
+    if (Math.abs(v.currentTime - start) < 0.01) playFromStart();
+    else {
+      v.addEventListener("seeked", playFromStart, { once: true });
+      v.currentTime = start;
+    }
+  }, [stopClipPreview, startTime, endTime]);
 
   const exportClip = async (): Promise<ExportedClip | null> => {
     const range = validateSelection();
@@ -386,6 +472,30 @@ export function VideoClipper() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="clip-duration">Clip</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="clip-duration"
+                  readOnly
+                  tabIndex={-1}
+                  value={durationSeconds != null ? formatTimecodeHmsMs(durationSeconds) : ""}
+                  placeholder="—"
+                  className="min-w-0 font-mono tabular-nums"
+                  aria-label="Clip duration"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  disabled={durationSeconds == null || !!busy}
+                  onClick={previewSelection}
+                >
+                  Preview Clip
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label>Export quality</Label>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -486,6 +596,17 @@ export function VideoClipper() {
       ) : null}
     </div>
   );
+}
+
+/** Skip shortcuts while typing or activating another control (Space on buttons, etc.). */
+function shouldIgnoreClipperVideoShortcut(event: KeyboardEvent): boolean {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (tag === "BUTTON" || tag === "A") return true;
+  return Boolean(target.closest("button, a, [role='button'], [role='link']"));
 }
 
 /** Triggers a browser download (`download=1` on Vercel Blob public URLs). */

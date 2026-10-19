@@ -51,4 +51,12 @@ describe("parseClipJson", () => {
     expect(parseClipJson({ url: MIMIR, start: 0, end: 10 })).toMatchObject({ status: 400 });
     expect(parseClipJson({ url: MIMIR, start: 0, end: 10, preset: "copy" })).toMatchObject({ preset: "copy" });
   });
+
+  it("normalizes an optional label", () => {
+    expect(parseClipJson({ url: MIMIR, start: 0, end: 10, preset: "copy" })).toMatchObject({ label: "" });
+    expect(parseClipJson({ url: MIMIR, start: 0, end: 10, preset: "team", label: "  Musk\nquote " })).toMatchObject({
+      label: "Musk quote",
+    });
+    expect(parseClipJson({ url: MIMIR, start: 0, end: 10, preset: "team", label: 5 })).toMatchObject({ status: 400 });
+  });
 });

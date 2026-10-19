@@ -1,4 +1,4 @@
-import { blobStoreConfigured, publicClipsStoreConfigured } from "@/lib/blob";
+import { blobStoreConfigured, publicClipsStoreConfigured, setAssetLabel } from "@/lib/blob";
 import { parseClipJson } from "@/lib/clip-validate";
 import { clipFilename, exportClipFromUrl } from "@/lib/media/export-clip";
 import { FfmpegError } from "@/lib/media/ffmpeg-sandbox";
@@ -36,6 +36,14 @@ export async function POST(req: Request) {
     const { inputUrl, sourceName, host } = await resolveSource(parsed.source);
     const filename = clipFilename(sourceName, range);
     const result = await exportClipFromUrl(inputUrl, range, preset, filename);
+    let label: string | null = null;
+    if (parsed.label) {
+      try {
+        label = await setAssetLabel(result.pathname, parsed.label);
+      } catch (e) {
+        console.error("clip label failed", e instanceof Error ? e.message : e);
+      }
+    }
     console.info("clip", {
       host,
       preset,
@@ -46,6 +54,8 @@ export async function POST(req: Request) {
     });
     return Response.json({
       url: result.url,
+      pathname: result.pathname,
+      label,
       filename,
       bytes: result.bytes,
       timings: result.timings,

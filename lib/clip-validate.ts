@@ -1,3 +1,4 @@
+import { normalizeLabel } from "@/lib/asset-labels";
 import { isAllowedClipUrl } from "@/lib/clip-url";
 import type { ClipPreset, TimeRange } from "@/lib/media/ffmpeg-args";
 import { MAX_CLIP_SECONDS } from "@/lib/timecode";
@@ -9,7 +10,8 @@ export type SourceRef = { kind: "url"; url: string } | { kind: "upload"; pathnam
 
 export type ValidationError = { error: string; status: number };
 
-export type ClipRequest = { range: TimeRange; preset: ClipPreset; source: SourceRef };
+/** `label` is normalized; empty when not given. */
+export type ClipRequest = { range: TimeRange; preset: ClipPreset; source: SourceRef; label: string };
 export type TranscribeRequest = { range: TimeRange; source: SourceRef };
 
 export function isUploadPathname(pathname: string) {
@@ -67,7 +69,8 @@ export function parseClipJson(body: unknown): ClipRequest | ValidationError {
   if (!o) return { error: "Invalid body", status: 400 };
   const preset = o.preset === "copy" ? "copy" : o.preset === "team" ? "team" : null;
   if (!preset) return { error: "preset must be team or copy", status: 400 };
+  if (o.label != null && typeof o.label !== "string") return { error: "label must be a string", status: 400 };
   const base = parseTranscribeJson(o);
   if ("error" in base) return base;
-  return { ...base, preset };
+  return { ...base, preset, label: normalizeLabel(o.label) };
 }

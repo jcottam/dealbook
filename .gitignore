@@ -17,7 +17,6 @@ workspaces/*/media/**
 # Generated
 .cache/
 .next/
-workspaces/*/hub/dist/
 workspaces/dealbook/data/posts.json
 workspaces/dealbook/data/research.json
 workspaces/dealbook/data/dataset.json

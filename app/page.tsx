@@ -24,15 +24,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         ))}
-        <Card className="border-dashed">
-          <CardHeader>
-            <CardTitle>DealBook workspace</CardTitle>
-            <CardDescription>
-              Content calendar, research, and the legacy social hub live under{" "}
-              <code className="text-xs">workspaces/dealbook</code>. Hub features will be rebuilt here over time.
-            </CardDescription>
-          </CardHeader>
-        </Card>
       </div>
     </AdminShell>
   );

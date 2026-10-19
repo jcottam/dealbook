@@ -1,7 +1,0 @@
-{
-  "mediaRoot": "media",
-  "csv": "source/content-calendar.csv",
-  "research": "source/research/speaker-one-pagers.html",
-  "host": "127.0.0.1",
-  "port": 4173
-}

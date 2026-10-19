@@ -18,6 +18,6 @@ media/
       …
 ```
 
-Files in this tree are **not** committed to Git (see root `.gitignore`). Point the hub at this folder via **Settings → Media root** (`media` by default in `hub.config.json`, relative to `workspaces/dealbook/`) or run `pnpm dealbook:hub:start` after cloning.
+Files in this tree are **not** committed to Git (see root `.gitignore`).
 
 Finished cuts often live in `_finished/`, `finished/`, or `delivery/` subfolders inside a post directory.

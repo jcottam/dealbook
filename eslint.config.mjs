@@ -8,7 +8,6 @@ export default defineConfig([
   globalIgnores([
     ".next/**",
     "next-env.d.ts",
-    "workspaces/*/hub/**",
     "workspaces/*/data/**",
     "workspaces/*/media/**",
   ]),

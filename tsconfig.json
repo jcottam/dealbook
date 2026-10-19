@@ -36,7 +36,6 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules",
-    "workspaces/*/hub"
+    "node_modules"
   ]
 }

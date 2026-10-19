@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const WORKSPACE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const WORKSPACE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MANIFEST = resolve(WORKSPACE_ROOT, 'source/calendar-source.json');
 
 function loadManifest() {
@@ -74,7 +74,7 @@ async function main() {
   if (!quiet) {
     console.log(`Wrote ${output} (${csv.length} bytes)`);
     console.log(`Sheet: ${editUrl}`);
-    console.log('Next: pnpm dealbook:hub:build   # static site, or pnpm dealbook:hub:start for the local hub');
+    console.log('Next: pnpm dealbook:build:data   # regenerate data/*.json');
   }
 }
 

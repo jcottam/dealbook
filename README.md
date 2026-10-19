@@ -24,9 +24,10 @@ A growing set of tools to package and prepare content for social media and produ
 |------|---------|
 | `workspaces/dealbook/source/` | Content calendar CSV, research HTML, sheet manifest |
 | `workspaces/dealbook/data/` | JSON generated from the CSV (`pnpm dealbook:build:data`) |
+| `workspaces/dealbook/scripts/` | Sheet sync and JSON build |
+| `workspaces/dealbook/lib/` | Calendar parse/build helpers used by those scripts |
 | `workspaces/dealbook/schema/` | Post / platform-variant JSON Schema |
 | `workspaces/dealbook/media/` | Local media library (gitignored; see its README) |
-| `workspaces/dealbook/hub/` | **Shelf**: original social hub SPA and local server |
 
 ## Local development
 
@@ -74,17 +75,17 @@ Deleted images can stay in the CDN cache for up to a minute.
 
 ```bash
 pnpm dealbook:sync         # Google Sheet → source/content-calendar.csv + data/*.json
-pnpm dealbook:hub:start    # legacy hub with local media at http://127.0.0.1:4173
+pnpm dealbook:build:data   # regenerate data/*.json from source/
 ```
 
-Sheet manifest: **`workspaces/dealbook/source/calendar-source.json`**. Details in **`AGENTS.md`** and `workspaces/dealbook/hub/README.md`.
+Sheet manifest: **`workspaces/dealbook/source/calendar-source.json`**. Details in **`AGENTS.md`**.
 
 ## Checks
 
 ```bash
-pnpm check   # lint, typecheck, DealBook hub tests, Vitest for lib/ and app/ routes
+pnpm check   # lint, typecheck, DealBook calendar tests, Vitest for lib/ and app/ routes
 ```
 
 ## Deploy
 
-The Next.js app deploys to Vercel from `main`. The legacy DealBook hub is local-only; `pnpm dealbook:hub:build` writes a static copy to `workspaces/dealbook/hub/dist/` if you need one.
+The Next.js app deploys to Vercel from `main`.

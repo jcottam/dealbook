@@ -2,7 +2,7 @@
 
 Instructions for humans and coding agents working in this repo.
 
-**Media Utils** is a Next.js app at the repo root (`app/`, `components/`, `lib/`): a growing library of tools to package and prepare content for social and production. Content for a specific show or client lives in a **workspace** under `workspaces/<name>/`. The only workspace today is **DealBook** (`workspaces/dealbook/`), whose original social hub is frozen under `workspaces/dealbook/hub/`; cherry-pick hub features into Next rather than extending the SPA.
+**Media Utils** is a Next.js app at the repo root (`app/`, `components/`, `lib/`): a growing library of tools to package and prepare content for social and production. Content for a specific show or client lives in a **workspace** under `workspaces/<name>/`. The only workspace today is **DealBook** (`workspaces/dealbook/`).
 
 ## App structure
 
@@ -10,7 +10,7 @@ Instructions for humans and coding agents working in this repo.
 - **Shared media helpers:** `lib/media/` (ffmpeg args, Vercel Sandbox, transcription, Blob exports).
 - **Blob stores:** private `media-utils` (OIDC + `BLOB_STORE_ID` + `BLOB_WEBHOOK_PUBLIC_KEY`) for source uploads under `uploads/` via `handleUploadPresigned` / `uploadPresigned`; public `media-utils-clips-public` (`BLOB_READ_WRITE_TOKEN`) for `clips/` and `images/` via `handleUpload`. When both are configured the SDK defaults to OIDC, so public-store calls must pass `publicBlobToken()` from `lib/blob.ts` explicitly. Do not use `handleUpload` for private uploads — it signs with `BLOB_READ_WRITE_TOKEN` (the public store).
 - **Asset labels:** every public image or clip lives in its own folder (`images/<id>/<file>`, `clips/<uuid>/<file>`), and its optional label is a sidecar blob in that folder (`lib/asset-labels.ts`). Keep that layout for new public asset types so `PUT /api/labels` and folder deletes keep working. Text for the content calendar's column J comes from `lib/sheet-format.ts`, shared by every tool, so keep one format.
-- **Tests:** Vitest runs `lib/**/*.test.ts` and `app/**/*.test.ts` (route handlers, with `@vercel/blob` mocked).
+- **Tests:** Vitest runs `lib/**/*.test.ts` and `app/**/*.test.ts` (route handlers, with `@vercel/blob` mocked). DealBook calendar tests run via `pnpm test:dealbook`.
 - **Old URLs:** `/tools/<slug>` permanently redirects to `/<slug>` (`next.config.ts`).
 - Keep tool code workspace-agnostic. Anything specific to one show or client belongs in its workspace folder.
 
@@ -24,7 +24,6 @@ Paths below are relative to `workspaces/dealbook/`.
 | **2. `source/content-calendar.csv`** | Committed snapshot used by builds and tests | Pulled via `pnpm dealbook:sync` (do not hand-edit unless fixing an export emergency) |
 | **3. `source/research/`** | Speaker one-pagers HTML | Editorial; committed in Git |
 | **4. `data/*.json`** | Generated posts, research merge, dataset | Never edit; run `pnpm dealbook:build:data` |
-| **5. `hub/dist/`** | Legacy static hub output (gitignored) | Never edit; run `pnpm dealbook:hub:build` |
 
 Manifest for the sheet (IDs, tab `gid`, paths): **`workspaces/dealbook/source/calendar-source.json`**.
 
@@ -38,7 +37,6 @@ Manifest for the sheet (IDs, tab `gid`, paths): **`workspaces/dealbook/source/ca
 ```bash
 pnpm dealbook:sync          # sheet → source/content-calendar.csv + data/*.json
 pnpm dealbook:sync:dry      # preview CSV changes only (no build)
-pnpm dealbook:hub:build     # after sync, rebuild legacy static site → hub/dist/
 ```
 
 After refreshing, run **`pnpm check`** before committing CSV changes.
@@ -55,10 +53,6 @@ The package manager is **pnpm** (pinned in `package.json` `packageManager`). Don
 | Lint, typecheck, all tests | `pnpm check` |
 | Pull latest DealBook sheet | `pnpm dealbook:sync` |
 | Regenerate DealBook JSON from `source/` | `pnpm dealbook:build:data` |
-| Legacy hub with local media | `pnpm dealbook:build:data` then `pnpm dealbook:hub:start` |
-| Legacy static hub | `pnpm dealbook:hub:build` |
-
-Environment override: `HUB_MEDIA_ROOT` at build time (relative to `workspaces/dealbook/`) to index a non-default media directory.
 
 ## Deploy
 
@@ -95,11 +89,11 @@ Update only for **on-disk media layout** conventions.
 
 ## Code touchpoints for DealBook calendar changes
 
-- **Parse/build:** `workspaces/dealbook/hub/scripts/build-data.mjs`, `hub/lib/csv.mjs`, `hub/lib/parse-source.mjs`, `hub/lib/post-model.mjs`
-- **Tests:** `workspaces/dealbook/hub/test/calendar.test.mjs`, `hub/test/parsing.test.mjs`
-- **Next UI:** root `app/`; hub features rebuilt here over time
+- **Parse/build:** `workspaces/dealbook/scripts/build-data.mjs`, `lib/csv.mjs`, `lib/parse-source.mjs`, `lib/post-model.mjs`
+- **Tests:** `workspaces/dealbook/test/calendar.test.mjs`, `test/parsing.test.mjs`
+- **Next UI:** root `app/`
 
-If column layout in the sheet changes, update `COL` in `workspaces/dealbook/hub/scripts/build-data.mjs` and tests together.
+If column layout in the sheet changes, update `COL` in `workspaces/dealbook/scripts/build-data.mjs` and tests together.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

@@ -8,6 +8,8 @@ Instructions for humans and coding agents working in this repo.
 
 - **Tool registry:** `lib/tools.ts`. Each tool has a `slug` and is served at `/<slug>` from `app/<slug>/page.tsx`, with components in `components/<slug>/`. The sidebar and dashboard read the registry, so register new tools there.
 - **Shared media helpers:** `lib/media/` (ffmpeg args, Vercel Sandbox, transcription, Blob exports).
+- **Blob stores:** private `media-utils` (OIDC + `BLOB_STORE_ID`) for source uploads under `uploads/`; public `media-utils-clips-public` (`BLOB_READ_WRITE_TOKEN`) for `clips/` and `images/`. When both are configured the SDK defaults to OIDC, so public-store calls must pass `publicBlobToken()` from `lib/blob.ts` explicitly.
+- **Tests:** Vitest runs `lib/**/*.test.ts` and `app/**/*.test.ts` (route handlers, with `@vercel/blob` mocked).
 - **Old URLs:** `/tools/<slug>` permanently redirects to `/<slug>` (`next.config.ts`).
 - Keep tool code workspace-agnostic. Anything specific to one show or client belongs in its workspace folder.
 

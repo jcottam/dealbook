@@ -1,4 +1,4 @@
-import { Scissors, type LucideIcon } from "lucide-react";
+import { ImageUp, Scissors, type LucideIcon } from "lucide-react";
 
 export type Tool = {
   slug: string;
@@ -14,6 +14,12 @@ export const tools: Tool[] = [
     title: "Video clipper",
     description: "Trim videos from a URL or upload, export clips, and transcribe selections.",
     icon: Scissors,
+  },
+  {
+    slug: "images",
+    title: "Image uploader",
+    description: "Upload images and get public links to share with your team.",
+    icon: ImageUp,
   },
 ];
 

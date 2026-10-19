@@ -43,44 +43,54 @@ export function checkImageFile(file: { name: string; size: number; type: string 
   return { contentType };
 }
 
-/** Blob pathname for an upload; Blob appends a random suffix, so names only need to be URL-safe. */
-export function imageUploadPathname(name: string, contentType: string): string {
-  const ext = extensionOf(name) || (Object.entries(TYPE_BY_EXTENSION).find(([, t]) => t === contentType)?.[0] ?? "jpg");
-  const base = name
+const IMAGE_PATHNAME_RE = /^images\/[a-z0-9]{10}\/[^/\\]+$/;
+
+/** Random folder per image, so the original filename stays as-is in the public URL. */
+export function newImageId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  return Array.from(bytes, (b) => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
+}
+
+/** URL-safe version of the original filename, e.g. `_DSC0457.jpg` stays `_DSC0457.jpg`. */
+export function safeImageFilename(name: string, contentType: string) {
+  const basename = name.split(/[/\\]/).pop() ?? "";
+  const ext = extensionOf(basename) || (Object.entries(TYPE_BY_EXTENSION).find(([, t]) => t === contentType)?.[0] ?? "jpg");
+  const base = basename
     .replace(/\.[^.]+$/, "")
     .replace(/[^\w.-]+/g, "_")
     .replace(/\.{2,}/g, ".")
-    .replace(/^[_.]+|[_.]+$/g, "")
+    .replace(/^\.+|[_.]+$/g, "")
     .slice(0, 100);
-  return `${IMAGE_PREFIX}${base || "image"}.${ext}`;
+  return `${base || "image"}.${ext}`;
+}
+
+/** `images/<id>/<filename>` */
+export function imageUploadPathname(id: string, name: string, contentType: string): string {
+  return `${IMAGE_PREFIX}${id}/${safeImageFilename(name, contentType)}`;
 }
 
 export function isImagePathname(pathname: string) {
   return (
-    pathname.startsWith(IMAGE_PREFIX) &&
-    pathname.length > IMAGE_PREFIX.length &&
+    IMAGE_PATHNAME_RE.test(pathname) &&
     pathname.length <= 512 &&
     !pathname.includes("..") &&
-    !pathname.includes("//") &&
-    !pathname.includes("\\") &&
     extensionOf(pathname) in TYPE_BY_EXTENSION
   );
 }
 
-/** Client-token constraints for `handleUpload`; throws on paths outside `images/`. */
+/** Client-token constraints for `handleUpload`; throws on anything but `images/<id>/<image file>`. */
 export function imageUploadTokenOptions(pathname: string) {
   if (!isImagePathname(pathname)) throw new Error("Invalid image path");
   return {
     allowedContentTypes: IMAGE_CONTENT_TYPES,
     maximumSizeInBytes: MAX_IMAGE_BYTES,
-    addRandomSuffix: true,
+    addRandomSuffix: false,
   };
 }
 
-/** `images/team-photo-<30 char suffix>.jpg` → `team-photo.jpg` */
+/** `images/<id>/_DSC0457.jpg` → `_DSC0457.jpg` */
 export function imageDisplayName(pathname: string) {
-  const name = pathname.startsWith(IMAGE_PREFIX) ? pathname.slice(IMAGE_PREFIX.length) : pathname;
-  return name.replace(/-[A-Za-z0-9]{30}(\.[^.]+)$/, "$1");
+  return pathname.slice(pathname.lastIndexOf("/") + 1);
 }
 
 /** Browsers other than Safari can't render HEIC, so previews fall back to an icon. */

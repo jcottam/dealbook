@@ -9,6 +9,7 @@ import {
   imageUploadTokenOptions,
   isImagePathname,
   MAX_IMAGE_BYTES,
+  newImageId,
   runWithConcurrency,
 } from "@/lib/images";
 
@@ -51,56 +52,67 @@ describe("checkImageFile", () => {
   });
 });
 
+const ID = "a1b2c3d4e5";
+
 describe("imageUploadPathname", () => {
-  it("keeps a readable, URL-safe name under images/", () => {
-    expect(imageUploadPathname("Sorkin keynote (final).JPG", "image/jpeg")).toBe("images/Sorkin_keynote_final.jpg");
-    expect(imageUploadPathname("../../etc.png", "image/png")).toBe("images/etc.png");
+  it("keeps the original filename readable in its own folder", () => {
+    expect(imageUploadPathname(ID, "_DSC0457.jpg", "image/jpeg")).toBe(`images/${ID}/_DSC0457.jpg`);
+    expect(imageUploadPathname(ID, "Sorkin keynote (final).JPG", "image/jpeg")).toBe(`images/${ID}/Sorkin_keynote_final.jpg`);
+    expect(imageUploadPathname(ID, "../../etc.png", "image/png")).toBe(`images/${ID}/etc.png`);
   });
 
   it("adds an extension from the content type and a default name", () => {
-    expect(imageUploadPathname("pasted", "image/png")).toBe("images/pasted.png");
-    expect(imageUploadPathname("???.webp", "image/webp")).toBe("images/image.webp");
+    expect(imageUploadPathname(ID, "pasted", "image/png")).toBe(`images/${ID}/pasted.png`);
+    expect(imageUploadPathname(ID, "???.webp", "image/webp")).toBe(`images/${ID}/image.webp`);
   });
 
   it("always produces a pathname the server accepts", () => {
-    for (const name of ["a b.png", "../x.jpg", "a..b.png", "日本.heic", ".gif"]) {
+    for (const name of ["a b.png", "../x.jpg", "a..b.png", "日本.heic", ".gif", "_DSC0457.JPG"]) {
       const contentType = imageContentType(name, "")!;
-      expect(isImagePathname(imageUploadPathname(name, contentType))).toBe(true);
+      expect(isImagePathname(imageUploadPathname(newImageId(), name, contentType))).toBe(true);
     }
   });
 });
 
+describe("newImageId", () => {
+  it("is 10 lowercase alphanumerics and varies", () => {
+    expect(newImageId()).toMatch(/^[a-z0-9]{10}$/);
+    expect(new Set(Array.from({ length: 20 }, newImageId)).size).toBe(20);
+  });
+});
+
 describe("isImagePathname", () => {
-  it("only allows image files under images/", () => {
-    expect(isImagePathname("images/a.jpg")).toBe(true);
-    expect(isImagePathname("images/")).toBe(false);
-    expect(isImagePathname("clips/abc/a.jpg")).toBe(false);
-    expect(isImagePathname("uploads/a.jpg")).toBe(false);
-    expect(isImagePathname("images/../clips/a.jpg")).toBe(false);
-    expect(isImagePathname("images//a.jpg")).toBe(false);
-    expect(isImagePathname("images/a.mp4")).toBe(false);
-    expect(isImagePathname(`images/${"a".repeat(600)}.jpg`)).toBe(false);
+  it("only allows images/<id>/<image file>", () => {
+    expect(isImagePathname(`images/${ID}/a.jpg`)).toBe(true);
+    expect(isImagePathname("images/a.jpg")).toBe(false);
+    expect(isImagePathname(`images/${ID}/`)).toBe(false);
+    expect(isImagePathname(`images/${ID}/sub/a.jpg`)).toBe(false);
+    expect(isImagePathname(`images/${ID}/label-YQ.txt`)).toBe(false);
+    expect(isImagePathname(`clips/${ID}/a.jpg`)).toBe(false);
+    expect(isImagePathname(`images/${ID}/../a.jpg`)).toBe(false);
+    expect(isImagePathname(`images/${ID}/a.mp4`)).toBe(false);
+    expect(isImagePathname(`images/${ID}/${"a".repeat(600)}.jpg`)).toBe(false);
   });
 });
 
 describe("imageUploadTokenOptions", () => {
-  it("restricts client tokens to images with a size cap and random suffix", () => {
-    expect(imageUploadTokenOptions("images/a.png")).toEqual({
+  it("restricts client tokens to images with a size cap and no random suffix", () => {
+    expect(imageUploadTokenOptions(`images/${ID}/a.png`)).toEqual({
       allowedContentTypes: ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"],
       maximumSizeInBytes: MAX_IMAGE_BYTES,
-      addRandomSuffix: true,
+      addRandomSuffix: false,
     });
   });
 
-  it("throws for paths outside images/", () => {
+  it("throws for other paths", () => {
     expect(() => imageUploadTokenOptions("clips/x/a.png")).toThrow("Invalid image path");
+    expect(() => imageUploadTokenOptions("images/a.png")).toThrow("Invalid image path");
   });
 });
 
 describe("imageDisplayName", () => {
-  it("strips the prefix and Blob's random suffix", () => {
-    expect(imageDisplayName("images/team-photo-oYnXSVczoLa9yBYMFJOSNdaiiervF5.jpg")).toBe("team-photo.jpg");
-    expect(imageDisplayName("images/no-suffix.png")).toBe("no-suffix.png");
+  it("is the original filename", () => {
+    expect(imageDisplayName(`images/${ID}/_DSC0457.jpg`)).toBe("_DSC0457.jpg");
   });
 });
 

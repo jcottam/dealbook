@@ -1,10 +1,17 @@
-import { del, issueSignedToken, list, presignUrl, put } from "@vercel/blob";
+import { del, issueSignedToken, list, type ListBlobResultBlob, presignUrl, put } from "@vercel/blob";
+import {
+  assetFolder,
+  isClipPathname,
+  isLabelSidecar,
+  labelFromSidecar,
+  labelSidecarPathname,
+  normalizeLabel,
+} from "@/lib/asset-labels";
 import { blobDownloadUrl } from "@/lib/blob-download-url";
 import { IMAGE_PREFIX, imageDisplayName, isImagePathname } from "@/lib/images";
 
 export { blobDownloadUrl };
-
-export const CLIP_PREFIX = "clips/";
+export { CLIP_PREFIX } from "@/lib/asset-labels";
 
 export function blobStoreConfigured() {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
@@ -35,23 +42,42 @@ export async function putPublicClip(pathname: string, body: Buffer, contentType:
 
 export type StoredImage = {
   url: string;
-  downloadUrl: string;
   pathname: string;
   name: string;
+  label: string | null;
   size: number;
   uploadedAt: string;
 };
 
-/** Newest first. Capped at one list page (1,000 images); `hasMore` says whether older ones were left out. */
+const LIST_PAGE_LIMIT = 1000;
+const MAX_LIST_PAGES = 5;
+
+/** Newest first. Stops after a few list pages; `hasMore` says whether older images were left out. */
 export async function listPublicImages(): Promise<{ images: StoredImage[]; hasMore: boolean }> {
-  const { blobs, hasMore } = await list({ prefix: IMAGE_PREFIX, limit: 1000, token: publicBlobToken() });
+  const token = publicBlobToken();
+  const blobs: ListBlobResultBlob[] = [];
+  let cursor: string | undefined;
+  let hasMore = false;
+  for (let page = 0; page < MAX_LIST_PAGES; page++) {
+    const result = await list({ prefix: IMAGE_PREFIX, limit: LIST_PAGE_LIMIT, cursor, token });
+    blobs.push(...result.blobs);
+    hasMore = result.hasMore;
+    cursor = result.cursor;
+    if (!hasMore) break;
+  }
+
+  const labels = new Map<string, string>();
+  for (const b of blobs) {
+    const label = labelFromSidecar(b.pathname);
+    if (label) labels.set(assetFolder(b.pathname), label);
+  }
   const images = blobs
     .filter((b) => isImagePathname(b.pathname))
     .map((b) => ({
       url: b.url,
-      downloadUrl: b.downloadUrl,
       pathname: b.pathname,
       name: imageDisplayName(b.pathname),
+      label: labels.get(assetFolder(b.pathname)) ?? null,
       size: b.size,
       uploadedAt: new Date(b.uploadedAt).toISOString(),
     }))
@@ -59,9 +85,38 @@ export async function listPublicImages(): Promise<{ images: StoredImage[]; hasMo
   return { images, hasMore };
 }
 
+/** Removes the image and its label sidecar. */
 export async function deletePublicImage(pathname: string) {
   if (!isImagePathname(pathname)) throw new Error("Invalid image path");
-  await del(pathname, { token: publicBlobToken() });
+  const token = publicBlobToken();
+  const { blobs } = await list({ prefix: assetFolder(pathname), token });
+  const urls = blobs.filter((b) => b.pathname === pathname || isLabelSidecar(b.pathname)).map((b) => b.url);
+  await del(urls.length ? urls : pathname, { token });
+}
+
+export function isLabelableAsset(pathname: string) {
+  return isImagePathname(pathname) || isClipPathname(pathname);
+}
+
+/** Replaces the label for an image or clip. An empty label removes it. */
+export async function setAssetLabel(assetPathname: string, rawLabel: unknown) {
+  if (!isLabelableAsset(assetPathname)) throw new Error("Invalid asset path");
+  const label = normalizeLabel(rawLabel);
+  const token = publicBlobToken();
+  const { blobs } = await list({ prefix: assetFolder(assetPathname), token });
+  const next = label ? labelSidecarPathname(assetPathname, label) : null;
+  const stale = blobs.filter((b) => isLabelSidecar(b.pathname) && b.pathname !== next).map((b) => b.url);
+  if (next && !blobs.some((b) => b.pathname === next)) {
+    await put(next, label, {
+      access: "public",
+      contentType: "text/plain; charset=utf-8",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      token,
+    });
+  }
+  if (stale.length) await del(stale, { token });
+  return label || null;
 }
 
 /** Short-lived GET link to one private blob. `download` makes the browser save it instead of playing it. */

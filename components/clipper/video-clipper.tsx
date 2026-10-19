@@ -10,14 +10,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { useCopy } from "@/hooks/use-copy";
+import { MAX_LABEL_LENGTH, normalizeLabel } from "@/lib/asset-labels";
 import { formatSeconds, formatTimecodeHmsMs, MAX_CLIP_SECONDS, parseTimeToSeconds } from "@/lib/timecode";
 import { blobDownloadUrl } from "@/lib/blob-download-url";
 import { parsePresignedMeta } from "@/lib/clip-url";
+import { formatTimecodeRange, sheetLine } from "@/lib/sheet-format";
 import { cn } from "@/lib/utils";
 
 type SourceKind = "url" | "file";
 type ClipPreset = "team" | "copy";
-type ExportedClip = { url: string; filename: string; bytes: number };
+type ExportedClip = {
+  url: string;
+  pathname: string;
+  filename: string;
+  bytes: number;
+  label: string | null;
+  range: { start: number; end: number };
+};
 type UploadState = { status: "uploading"; pct: number } | { status: "done" } | { status: "error"; message: string };
 type PendingUpload = { file: File; promise: Promise<string>; abort: AbortController };
 
@@ -44,7 +54,11 @@ export function VideoClipper() {
   const [busy, setBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [transcript, setTranscript] = useState("");
+  const [transcriptRange, setTranscriptRange] = useState<{ start: number; end: number } | null>(null);
+  const [includeTranscript, setIncludeTranscript] = useState(true);
+  const [clipLabel, setClipLabel] = useState("");
   const [lastClip, setLastClip] = useState<ExportedClip | null>(null);
+  const { copiedKey, copy } = useCopy();
   const [uploadState, setUploadState] = useState<UploadState | null>(null);
   const uploadRef = useRef<PendingUpload | null>(null);
 
@@ -99,6 +113,8 @@ export function VideoClipper() {
     setFile(null);
     setUrlInput("");
     setTranscript("");
+    setTranscriptRange(null);
+    setClipLabel("");
     setLastClip(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [cancelUpload]);
@@ -288,8 +304,16 @@ export function VideoClipper() {
     try {
       const source = await sourcePayload();
       setProgress(40);
-      const data = await postJson("/api/clip", { ...source, ...range, preset });
-      const clip: ExportedClip = { url: data.url, filename: data.filename, bytes: data.bytes };
+      const data = await postJson("/api/clip", { ...source, ...range, preset, label: clipLabel });
+      const clip: ExportedClip = {
+        url: data.url,
+        pathname: data.pathname,
+        filename: data.filename,
+        bytes: data.bytes,
+        label: data.label ?? null,
+        range,
+      };
+      if (normalizeLabel(clipLabel) && !clip.label) toast.error("Clip saved, but its label wasn't. Edit the label to retry.");
       return clip;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Clip failed.");
@@ -326,6 +350,7 @@ export function VideoClipper() {
       setProgress(40);
       const data = await postJson("/api/transcribe", { ...source, ...range });
       setTranscript(data.text ?? "");
+      setTranscriptRange(range);
       toast.success("Transcript ready.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Transcription failed.");
@@ -341,10 +366,44 @@ export function VideoClipper() {
     toast.success("Copied to clipboard.");
   };
 
-  const copyClipUrl = async () => {
+  const copyClipUrl = () => {
+    if (lastClip) void copy("clip-url", lastClip.url, "Clip link copied.");
+  };
+
+  const transcriptMatchesClip =
+    !!transcript && !!lastClip && transcriptRange?.start === lastClip.range.start && transcriptRange?.end === lastClip.range.end;
+
+  const copyClipForSheet = () => {
     if (!lastClip) return;
-    await navigator.clipboard.writeText(lastClip.url);
-    toast.success("Clip link copied.");
+    const text = sheetLine({
+      url: lastClip.url,
+      label: lastClip.label,
+      range: lastClip.range,
+      transcript: includeTranscript && transcriptMatchesClip ? transcript : null,
+    });
+    void copy("clip-sheet", text, "Copied for the sheet.", { sheetCell: true });
+  };
+
+  /** Saves label edits made after the clip was exported. */
+  const saveClipLabel = async () => {
+    if (!lastClip) return;
+    const sameSelection =
+      parseTimeToSeconds(startTime) === lastClip.range.start && parseTimeToSeconds(endTime) === lastClip.range.end;
+    const label = normalizeLabel(clipLabel);
+    if (!sameSelection || label === (lastClip.label ?? "")) return;
+    try {
+      const res = await fetch("/api/labels", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pathname: lastClip.pathname, label }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      setLastClip((clip) => (clip?.pathname === lastClip.pathname ? { ...clip, label: data.label ?? null } : clip));
+      toast.success(label ? "Label saved." : "Label removed.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Couldn't save the label.");
+    }
   };
 
   return (
@@ -496,6 +555,20 @@ export function VideoClipper() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="clip-label">
+                Label <span className="font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="clip-label"
+                value={clipLabel}
+                maxLength={MAX_LABEL_LENGTH}
+                placeholder="Source path or a short name, e.g. Musk quote"
+                onChange={(e) => setClipLabel(e.target.value)}
+                onBlur={() => void saveClipLabel()}
+                onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+              />
+            </div>
+            <div className="space-y-2">
               <Label>Export quality</Label>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -555,6 +628,11 @@ export function VideoClipper() {
             {lastClip ? (
               <div className="space-y-2">
                 <p className="text-sm font-medium text-foreground">Share link</p>
+                <p className="text-xs text-muted-foreground">
+                  {lastClip.label ? <span className="font-medium text-foreground">{lastClip.label}</span> : "No label"}
+                  {" · "}
+                  {formatTimecodeRange(lastClip.range)}
+                </p>
                 <div className="flex gap-2">
                   <Input
                     readOnly
@@ -563,8 +641,25 @@ export function VideoClipper() {
                     aria-label="Clip share URL"
                   />
                   <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={copyClipUrl}>
-                    Copy link
+                    {copiedKey === "clip-url" ? "Copied" : "Copy link"}
                   </Button>
+                </div>
+                <Button type="button" variant="secondary" size="sm" className="w-full" onClick={copyClipForSheet}>
+                  {copiedKey === "clip-sheet" ? "Copied" : "Copy for sheet"}
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="sheet-transcript"
+                    checked={includeTranscript && transcriptMatchesClip}
+                    disabled={!transcriptMatchesClip}
+                    onCheckedChange={(checked) => setIncludeTranscript(checked === true)}
+                  />
+                  <Label
+                    htmlFor="sheet-transcript"
+                    className={cn("cursor-pointer text-xs font-normal", !transcriptMatchesClip && "text-muted-foreground")}
+                  >
+                    {transcriptMatchesClip ? "Include transcript" : "Include transcript (transcribe this selection first)"}
+                  </Label>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   <a href={lastClip.url} target="_blank" rel="noopener noreferrer" className="text-foreground underline underline-offset-4">

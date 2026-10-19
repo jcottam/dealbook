@@ -47,7 +47,17 @@ Blob: private **`media-utils`** for source uploads (`BLOB_STORE_ID`); public **`
 
 ### Image uploader (`/images`)
 
-Upload JPG, PNG, WebP, GIF, or HEIC images (up to 50 MB each) by drag and drop, file picker, or paste. Each one gets a public link, and the page lists everything under `images/` with copy and delete buttons. Files go straight from the browser to Blob ([client uploads](https://vercel.com/docs/vercel-blob/client-upload)), so the Function body limit doesn't apply. `/api/images/upload` only issues upload tokens; `/api/images` lists and deletes.
+Upload JPG, PNG, WebP, GIF, or HEIC images (up to 50 MB each) by drag and drop, file picker, or paste. Each one gets a public link that keeps its original filename (`images/<id>/_DSC0457.jpg`), and the page lists everything under `images/` with copy and delete buttons. Files go straight from the browser to Blob ([client uploads](https://vercel.com/docs/vercel-blob/client-upload)), so the Function body limit doesn't apply. `/api/images/upload` only issues upload tokens; `/api/images` lists and deletes.
+
+**Labels and sheet copy.** Images and clips take an optional label, such as the original Mjoll path or "Title slide". **Copy for sheet** copies text for the content calendar's "Source w/ timestamps" column, one line per asset:
+
+```text
+Title slide: https://…/images/…/_DSC0457.jpg
+Musk quote (00:04:55–00:05:17): https://…/clips/…/clip.mp4
+"I have no problem being hated…"
+```
+
+In the image uploader, select the images for a post (a fresh upload batch is selected for you) and copy them together. In the clipper, the transcript line is optional. The clipboard also carries a one-cell HTML version, so pasting onto a selected Sheets cell keeps every line in that cell. Blob has no custom metadata, so a label is stored as a small `label-<base64url>.txt` blob next to its asset (`PUT /api/labels`); format lives in `lib/sheet-format.ts`.
 
 Blob setup (once per Vercel project):
 

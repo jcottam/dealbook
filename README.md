@@ -43,7 +43,7 @@ pnpm try:transcribe '<url>' 60 120   # extract + transcribe a range from the CLI
 pnpm try:clip '<url>' 60 120 team    # export a clip (team | copy) and print the public download URL
 ```
 
-Blob: private **`media-utils`** for source uploads (`BLOB_STORE_ID`); public **`media-utils-clips-public`** for exported clips and images (`BLOB_READ_WRITE_TOKEN`). Mimir URLs are read directly in Sandbox. Local files upload to private `uploads/` (up to 5 GB); clips land in public `clips/` and images in public `images/`, both with stable URLs. Nothing is deleted automatically.
+Blob: private **`media-utils`** for source uploads (`BLOB_STORE_ID` + OIDC; client uploads use presigned URLs); public **`media-utils-clips-public`** for exported clips and images (`BLOB_READ_WRITE_TOKEN`). Mimir URLs are read directly in Sandbox. Local files upload to private `uploads/` (up to 5 GB); clips land in public `clips/` and images in public `images/`, both with stable URLs. Nothing is deleted automatically.
 
 ### Image uploader (`/images`)
 

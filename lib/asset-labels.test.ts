@@ -3,10 +3,15 @@ import {
   assetFolder,
   isClipPathname,
   isLabelSidecar,
+  isSidecar,
   labelFromSidecar,
   labelSidecarPathname,
   MAX_LABEL_LENGTH,
+  MAX_TAG_LENGTH,
   normalizeLabel,
+  normalizeTag,
+  tagFromSidecar,
+  tagSidecarPathname,
 } from "@/lib/asset-labels";
 
 const IMAGE = "images/a1b2c3d4e5/_DSC0457.jpg";
@@ -54,6 +59,25 @@ describe("label sidecars", () => {
     expect(isLabelSidecar(IMAGE)).toBe(false);
     expect(labelFromSidecar(IMAGE)).toBeNull();
     expect(labelFromSidecar("images/a1b2c3d4e5/label-_w.txt")).toBeNull();
+  });
+});
+
+describe("tag sidecars", () => {
+  it("round-trips tags next to the image, separate from labels", () => {
+    const sidecar = tagSidecarPathname(IMAGE, "Post 1");
+    expect(sidecar.startsWith("images/a1b2c3d4e5/tag-")).toBe(true);
+    expect(tagFromSidecar(sidecar)).toBe("Post 1");
+    expect(labelFromSidecar(sidecar)).toBeNull();
+    expect(isLabelSidecar(sidecar)).toBe(false);
+    expect(isSidecar(sidecar)).toBe(true);
+    expect(isSidecar(sidecar, "tag")).toBe(true);
+    expect(tagFromSidecar(labelSidecarPathname(IMAGE, "Post 1"))).toBeNull();
+  });
+
+  it("normalizes tags to one short line", () => {
+    expect(normalizeTag("  Post \n 1 ")).toBe("Post 1");
+    expect(normalizeTag("x".repeat(500))).toHaveLength(MAX_TAG_LENGTH);
+    expect(normalizeTag(null)).toBe("");
   });
 });
 

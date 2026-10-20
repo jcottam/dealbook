@@ -102,6 +102,31 @@ export function formatBytes(bytes: number) {
   return bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.ceil(bytes / 1024))} KB`;
 }
 
+export type ImageSort = "newest" | "tag";
+
+export const IMAGE_SORT_OPTIONS: { value: ImageSort; label: string }[] = [
+  { value: "newest", label: "Newest first" },
+  { value: "tag", label: "Tag (A–Z)" },
+];
+
+const tagCollator = new Intl.Collator("en", { numeric: true, sensitivity: "base" });
+
+/**
+ * "newest": by upload time, newest first.
+ * "tag": natural order, case-insensitive ("Post 2" < "Post 9" < "Post 10"), newest first within a tag,
+ * untagged last (newest first).
+ */
+export function sortImages<T extends { tag?: string | null; uploadedAt: string }>(images: T[], sort: ImageSort): T[] {
+  const newest = (a: T, b: T) => b.uploadedAt.localeCompare(a.uploadedAt);
+  if (sort === "newest") return [...images].sort(newest);
+  return [...images].sort((a, b) => {
+    const ta = a.tag?.trim() ?? "";
+    const tb = b.tag?.trim() ?? "";
+    if (!ta !== !tb) return ta ? -1 : 1;
+    return (ta && tb ? tagCollator.compare(ta, tb) : 0) || newest(a, b);
+  });
+}
+
 /** Runs `fn` over `items` with at most `limit` in flight. */
 export async function runWithConcurrency<T>(items: T[], limit: number, fn: (item: T) => Promise<void>) {
   let next = 0;

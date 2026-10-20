@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { upload as uploadToBlob } from "@vercel/blob/client";
 import { Check, Copy, ExternalLink, ImageIcon, RefreshCw, RotateCcw, Sheet, Trash2, X } from "lucide-react";
@@ -22,19 +22,22 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCopy } from "@/hooks/use-copy";
-import { MAX_LABEL_LENGTH, normalizeLabel } from "@/lib/asset-labels";
+import { MAX_LABEL_LENGTH, MAX_TAG_LENGTH, normalizeLabel, normalizeTag } from "@/lib/asset-labels";
 import type { StoredImage } from "@/lib/blob";
 import {
   checkImageFile,
   formatBytes,
   IMAGE_ACCEPT,
+  IMAGE_SORT_OPTIONS,
   IMAGE_TYPES_LABEL,
   imageDisplayName,
   imageUploadPathname,
+  type ImageSort,
   isHeic,
   MAX_IMAGE_BYTES,
   newImageId,
   runWithConcurrency,
+  sortImages,
 } from "@/lib/images";
 import { sheetText } from "@/lib/sheet-format";
 import { cn } from "@/lib/utils";
@@ -55,6 +58,7 @@ type Library = { images: StoredImage[]; hasMore: boolean };
 
 const UPLOAD_CONCURRENCY = 3;
 const LABEL_PLACEHOLDER = "Label, e.g. Title slide or Photography/NYT/Selects/…/_DSC0457.jpg";
+const TAG_PLACEHOLDER = "Tag, e.g. Post 1";
 
 const CARD = "gap-0 py-0";
 const CARD_HEADER = "pt-6 pb-0";
@@ -73,6 +77,7 @@ export function ImageUploader() {
   const [selected, setSelected] = useState<string[]>([]);
   const [pendingDelete, setPendingDelete] = useState<StoredImage | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [sort, setSort] = useState<ImageSort>("newest");
   const { copiedKey, copy } = useCopy();
 
   useEffect(() => {
@@ -139,6 +144,20 @@ export function ImageUploader() {
     [updateImage],
   );
 
+  const saveTag = useCallback(
+    async (image: Pick<StoredImage, "pathname" | "tag">, raw: string) => {
+      const tag = normalizeTag(raw);
+      if (tag === (image.tag ?? "")) return;
+      updateImage(image.pathname, { tag: tag || null });
+      const result = await putTag(image.pathname, tag);
+      if (result instanceof Error) {
+        updateImage(image.pathname, { tag: image.tag });
+        toast.error(result.message);
+      } else updateImage(image.pathname, { tag: result });
+    },
+    [updateImage],
+  );
+
   /** Resolves to the stored image on success, or null if it failed or was cancelled. */
   const uploadItem = useCallback(
     async (item: PendingUpload): Promise<StoredImage | null> => {
@@ -158,6 +177,7 @@ export function ImageUploader() {
           pathname: blob.pathname,
           name: imageDisplayName(blob.pathname),
           label: null,
+          tag: null,
           size: item.file.size,
           uploadedAt: new Date().toISOString(),
         };
@@ -258,6 +278,8 @@ export function ImageUploader() {
     setSelected((prev) => (on ? [...prev.filter((p) => p !== pathname), pathname] : prev.filter((p) => p !== pathname)));
   };
 
+  const sortedImages = useMemo(() => sortImages(library?.images ?? [], sort), [library, sort]);
+  const sortLabel = sort === "tag" ? "sorted by tag" : "newest first";
   const imagesByPathname = new Map(library?.images.map((i) => [i.pathname, i]) ?? []);
   const selectedImages = selected.flatMap((p) => imagesByPathname.get(p) ?? []);
   const count = selectedImages.length;
@@ -397,7 +419,7 @@ export function ImageUploader() {
           <CardTitle>Uploaded images</CardTitle>
           <CardDescription>
             {library
-              ? `${library.images.length}${library.hasMore ? "+" : ""} image${library.images.length === 1 ? "" : "s"}, newest first. Select the ones for a post, then copy them as lines for the content calendar.`
+              ? `${library.images.length}${library.hasMore ? "+" : ""} image${library.images.length === 1 ? "" : "s"}, ${sortLabel}. Select the ones for a post, then copy them as lines for the content calendar.`
               : "Everything uploaded with this tool."}
           </CardDescription>
           <CardAction>
@@ -425,6 +447,22 @@ export function ImageUploader() {
               ) : (
                 <span className="px-1 text-xs text-muted-foreground">Select images to copy them together.</span>
               )}
+              <div role="radiogroup" aria-label="Sort images" className="ml-auto flex items-center gap-1">
+                <span className="px-1 text-xs text-muted-foreground">Sort</span>
+                {IMAGE_SORT_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={sort === option.value}
+                    variant={sort === option.value ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => setSort(option.value)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           ) : null}
           {libraryError ? <p className="text-sm text-destructive">{libraryError}</p> : null}
@@ -440,7 +478,7 @@ export function ImageUploader() {
           ) : null}
           {library?.images.length ? (
             <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {library.images.map((image) => {
+              {sortedImages.map((image) => {
                 const isSelected = selected.includes(image.pathname);
                 return (
                   <li
@@ -464,9 +502,19 @@ export function ImageUploader() {
                       />
                     </div>
                     <div className="space-y-2 p-3">
-                      <LabelInput
-                        key={image.label ?? ""}
+                      <CommitInput
+                        key={`tag:${image.tag ?? ""}`}
+                        value={image.tag ?? ""}
+                        maxLength={MAX_TAG_LENGTH}
+                        placeholder={TAG_PLACEHOLDER}
+                        ariaLabel={`Tag for ${image.name}`}
+                        onCommit={(tag) => void saveTag(image, tag)}
+                      />
+                      <CommitInput
+                        key={`label:${image.label ?? ""}`}
                         value={image.label ?? ""}
+                        maxLength={MAX_LABEL_LENGTH}
+                        placeholder={LABEL_PLACEHOLDER}
                         ariaLabel={`Label for ${image.name}`}
                         onCommit={(label) => void saveLabel(image, label)}
                       />
@@ -540,14 +588,26 @@ export function ImageUploader() {
   );
 }
 
-/** Saves on blur or Enter; remounted via `key` when the stored label changes. */
-function LabelInput({ value, ariaLabel, onCommit }: { value: string; ariaLabel: string; onCommit: (label: string) => void }) {
+/** Saves on blur or Enter; remounted via `key` when the stored value changes. */
+function CommitInput({
+  value,
+  maxLength,
+  placeholder,
+  ariaLabel,
+  onCommit,
+}: {
+  value: string;
+  maxLength: number;
+  placeholder: string;
+  ariaLabel: string;
+  onCommit: (value: string) => void;
+}) {
   const [draft, setDraft] = useState(value);
   return (
     <Input
       value={draft}
-      maxLength={MAX_LABEL_LENGTH}
-      placeholder={LABEL_PLACEHOLDER}
+      maxLength={maxLength}
+      placeholder={placeholder}
       aria-label={ariaLabel}
       title={draft || undefined}
       className="h-8 text-xs"
@@ -634,6 +694,21 @@ async function putLabel(pathname: string, label: string): Promise<string | null 
     return (data.label as string | null) ?? null;
   } catch {
     return new Error("Couldn't save the label.");
+  }
+}
+
+async function putTag(pathname: string, tag: string): Promise<string | null | Error> {
+  try {
+    const res = await fetch("/api/images/tag", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pathname, tag }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return new Error(data.error || "Couldn't save the tag.");
+    return (data.tag as string | null) ?? null;
+  } catch {
+    return new Error("Couldn't save the tag.");
   }
 }
 

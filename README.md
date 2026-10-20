@@ -60,6 +60,8 @@ Musk quote (00:04:55–00:05:17): https://…/clips/…/clip.mp4
 
 In the image uploader, select the images for a post (a fresh upload batch is selected for you) and copy them together. In the clipper, the transcript line is optional. The clipboard also carries a one-cell HTML version, so pasting onto a selected Sheets cell keeps every line in that cell. Blob has no custom metadata, so a label is stored as a small `label-<base64url>.txt` blob next to its asset (`PUT /api/labels`); format lives in `lib/sheet-format.ts`.
 
+**Tags and sort.** Each image can also take one free-text tag, such as "Post 1", to group photos by post. Tags are only for organizing the page and aren't included in sheet copy. The library sorts by **Newest first** (default) or **Tag (A–Z)**, which orders tags naturally ("Post 2" before "Post 10") and puts untagged images last. A tag is a `tag-<base64url>.txt` blob next to the image, saved with `PUT /api/images/tag`; clearing the field removes it.
+
 Blob setup (once per Vercel project):
 
 1. Vercel dashboard → **Storage** → **Create** → **Blob**, name it `media-utils-clips-public`, access **Public**. Skip this if the store already exists.

@@ -2,10 +2,12 @@ import { del, issueSignedToken, list, type ListBlobResultBlob, presignUrl, put }
 import {
   assetFolder,
   isClipPathname,
-  isLabelSidecar,
+  isSidecar,
   labelFromSidecar,
-  labelSidecarPathname,
-  normalizeLabel,
+  normalizeSidecarText,
+  type SidecarKind,
+  sidecarPathname,
+  tagFromSidecar,
 } from "@/lib/asset-labels";
 import { blobDownloadUrl } from "@/lib/blob-download-url";
 import { IMAGE_PREFIX, imageDisplayName, isImagePathname } from "@/lib/images";
@@ -45,6 +47,7 @@ export type StoredImage = {
   pathname: string;
   name: string;
   label: string | null;
+  tag: string | null;
   size: number;
   uploadedAt: string;
 };
@@ -67,9 +70,12 @@ export async function listPublicImages(): Promise<{ images: StoredImage[]; hasMo
   }
 
   const labels = new Map<string, string>();
+  const tags = new Map<string, string>();
   for (const b of blobs) {
     const label = labelFromSidecar(b.pathname);
     if (label) labels.set(assetFolder(b.pathname), label);
+    const tag = tagFromSidecar(b.pathname);
+    if (tag) tags.set(assetFolder(b.pathname), tag);
   }
   const images = blobs
     .filter((b) => isImagePathname(b.pathname))
@@ -78,6 +84,7 @@ export async function listPublicImages(): Promise<{ images: StoredImage[]; hasMo
       pathname: b.pathname,
       name: imageDisplayName(b.pathname),
       label: labels.get(assetFolder(b.pathname)) ?? null,
+      tag: tags.get(assetFolder(b.pathname)) ?? null,
       size: b.size,
       uploadedAt: new Date(b.uploadedAt).toISOString(),
     }))
@@ -85,12 +92,12 @@ export async function listPublicImages(): Promise<{ images: StoredImage[]; hasMo
   return { images, hasMore };
 }
 
-/** Removes the image and its label sidecar. */
+/** Removes the image and its label and tag sidecars. */
 export async function deletePublicImage(pathname: string) {
   if (!isImagePathname(pathname)) throw new Error("Invalid image path");
   const token = publicBlobToken();
   const { blobs } = await list({ prefix: assetFolder(pathname), token });
-  const urls = blobs.filter((b) => b.pathname === pathname || isLabelSidecar(b.pathname)).map((b) => b.url);
+  const urls = blobs.filter((b) => b.pathname === pathname || isSidecar(b.pathname)).map((b) => b.url);
   await del(urls.length ? urls : pathname, { token });
 }
 
@@ -98,16 +105,15 @@ export function isLabelableAsset(pathname: string) {
   return isImagePathname(pathname) || isClipPathname(pathname);
 }
 
-/** Replaces the label for an image or clip. An empty label removes it. */
-export async function setAssetLabel(assetPathname: string, rawLabel: unknown) {
-  if (!isLabelableAsset(assetPathname)) throw new Error("Invalid asset path");
-  const label = normalizeLabel(rawLabel);
+/** Replaces the `kind` sidecar of an asset. Empty text removes it. */
+async function setAssetSidecar(kind: SidecarKind, assetPathname: string, raw: unknown) {
+  const text = normalizeSidecarText(kind, raw);
   const token = publicBlobToken();
   const { blobs } = await list({ prefix: assetFolder(assetPathname), token });
-  const next = label ? labelSidecarPathname(assetPathname, label) : null;
-  const stale = blobs.filter((b) => isLabelSidecar(b.pathname) && b.pathname !== next).map((b) => b.url);
+  const next = text ? sidecarPathname(kind, assetPathname, text) : null;
+  const stale = blobs.filter((b) => isSidecar(b.pathname, kind) && b.pathname !== next).map((b) => b.url);
   if (next && !blobs.some((b) => b.pathname === next)) {
-    await put(next, label, {
+    await put(next, text, {
       access: "public",
       contentType: "text/plain; charset=utf-8",
       addRandomSuffix: false,
@@ -116,7 +122,19 @@ export async function setAssetLabel(assetPathname: string, rawLabel: unknown) {
     });
   }
   if (stale.length) await del(stale, { token });
-  return label || null;
+  return text || null;
+}
+
+/** Replaces the label for an image or clip. An empty label removes it. */
+export async function setAssetLabel(assetPathname: string, rawLabel: unknown) {
+  if (!isLabelableAsset(assetPathname)) throw new Error("Invalid asset path");
+  return setAssetSidecar("label", assetPathname, rawLabel);
+}
+
+/** Replaces an image's tag (e.g. "Post 1"). An empty tag removes it. */
+export async function setImageTag(imagePathname: string, rawTag: unknown) {
+  if (!isImagePathname(imagePathname)) throw new Error("Invalid image path");
+  return setAssetSidecar("tag", imagePathname, rawTag);
 }
 
 /** Short-lived GET link to one private blob. `download` makes the browser save it instead of playing it. */

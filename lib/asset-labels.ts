@@ -1,20 +1,36 @@
 /**
- * Labels (e.g. the original Mjoll path, or "Title slide") for shared images and clips.
- * Blob has no custom metadata, so each asset lives in its own folder and the label is stored as a
- * sidecar blob in that folder whose pathname carries the label. Listing the folder returns it
+ * Labels (e.g. the original Mjoll path, or "Title slide") for shared images and clips, and tags
+ * (e.g. "Post 1") for images.
+ * Blob has no custom metadata, so each asset lives in its own folder and each label or tag is stored
+ * as a sidecar blob in that folder whose pathname carries the text. Listing the folder returns them
  * without fetching anything.
  */
 
+export type SidecarKind = "label" | "tag";
+
 export const MAX_LABEL_LENGTH = 200;
 const MAX_LABEL_BYTES = 400;
-const SIDECAR_RE = /^label-([A-Za-z0-9_-]+)\.txt$/;
+export const MAX_TAG_LENGTH = 60;
+const SIDECAR_RE = /^(label|tag)-([A-Za-z0-9_-]+)\.txt$/;
+
+function normalizeLine(raw: unknown, maxLength: number): string {
+  if (typeof raw !== "string") return "";
+  let text = raw.replace(/\s+/g, " ").trim().slice(0, maxLength);
+  while (new TextEncoder().encode(text).length > MAX_LABEL_BYTES) text = text.slice(0, -1);
+  return text.trim();
+}
 
 /** Single line, trimmed, capped so the sidecar pathname stays well within Blob's limit. */
 export function normalizeLabel(raw: unknown): string {
-  if (typeof raw !== "string") return "";
-  let label = raw.replace(/\s+/g, " ").trim().slice(0, MAX_LABEL_LENGTH);
-  while (new TextEncoder().encode(label).length > MAX_LABEL_BYTES) label = label.slice(0, -1);
-  return label.trim();
+  return normalizeLine(raw, MAX_LABEL_LENGTH);
+}
+
+export function normalizeTag(raw: unknown): string {
+  return normalizeLine(raw, MAX_TAG_LENGTH);
+}
+
+export function normalizeSidecarText(kind: SidecarKind, raw: unknown): string {
+  return kind === "tag" ? normalizeTag(raw) : normalizeLabel(raw);
 }
 
 function toBase64Url(text: string) {
@@ -34,23 +50,50 @@ export function assetFolder(pathname: string) {
   return pathname.slice(0, pathname.lastIndexOf("/") + 1);
 }
 
+export function sidecarPathname(kind: SidecarKind, assetPathname: string, text: string) {
+  return `${assetFolder(assetPathname)}${kind}-${toBase64Url(text)}.txt`;
+}
+
 export function labelSidecarPathname(assetPathname: string, label: string) {
-  return `${assetFolder(assetPathname)}label-${toBase64Url(label)}.txt`;
+  return sidecarPathname("label", assetPathname, label);
+}
+
+export function tagSidecarPathname(assetPathname: string, tag: string) {
+  return sidecarPathname("tag", assetPathname, tag);
+}
+
+function parseSidecar(pathname: string) {
+  const m = SIDECAR_RE.exec(pathname.slice(pathname.lastIndexOf("/") + 1));
+  return m ? { kind: m[1] as SidecarKind, encoded: m[2] } : null;
+}
+
+/** Any label or tag sidecar, or only those of `kind`. */
+export function isSidecar(pathname: string, kind?: SidecarKind) {
+  const parsed = parseSidecar(pathname);
+  return parsed != null && (kind == null || parsed.kind === kind);
 }
 
 export function isLabelSidecar(pathname: string) {
-  return SIDECAR_RE.test(pathname.slice(pathname.lastIndexOf("/") + 1));
+  return isSidecar(pathname, "label");
 }
 
-/** Label stored in a sidecar pathname, or null if it isn't one (or is corrupt). */
-export function labelFromSidecar(pathname: string): string | null {
-  const m = SIDECAR_RE.exec(pathname.slice(pathname.lastIndexOf("/") + 1));
-  if (!m) return null;
+/** Text stored in a `kind` sidecar pathname, or null if it isn't one (or is corrupt). */
+export function textFromSidecar(kind: SidecarKind, pathname: string): string | null {
+  const parsed = parseSidecar(pathname);
+  if (!parsed || parsed.kind !== kind) return null;
   try {
-    return normalizeLabel(fromBase64Url(m[1])) || null;
+    return normalizeSidecarText(kind, fromBase64Url(parsed.encoded)) || null;
   } catch {
     return null;
   }
+}
+
+export function labelFromSidecar(pathname: string): string | null {
+  return textFromSidecar("label", pathname);
+}
+
+export function tagFromSidecar(pathname: string): string | null {
+  return textFromSidecar("tag", pathname);
 }
 
 export const CLIP_PREFIX = "clips/";

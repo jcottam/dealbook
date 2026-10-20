@@ -11,6 +11,7 @@ import {
   MAX_IMAGE_BYTES,
   newImageId,
   runWithConcurrency,
+  sortImages,
 } from "@/lib/images";
 
 describe("imageContentType", () => {
@@ -142,5 +143,36 @@ describe("runWithConcurrency", () => {
 
   it("handles an empty list", async () => {
     await expect(runWithConcurrency([], 3, async () => {})).resolves.toBeUndefined();
+  });
+});
+
+describe("sortImages", () => {
+  const img = (name: string, tag: string | null, day: number) => ({
+    name,
+    tag,
+    uploadedAt: `2026-10-${String(day).padStart(2, "0")}T00:00:00.000Z`,
+  });
+  const images = [
+    img("a", "Post 10", 1),
+    img("b", null, 2),
+    img("c", "post 2", 3),
+    img("d", "Post 9", 4),
+    img("e", null, 5),
+    img("f", "Post 2", 6),
+    img("g", "Title", 7),
+  ];
+
+  it("sorts newest first by default without mutating the input", () => {
+    expect(sortImages(images, "newest").map((i) => i.name)).toEqual(["g", "f", "e", "d", "c", "b", "a"]);
+    expect(images[0].name).toBe("a");
+  });
+
+  it("sorts tags naturally and case-insensitively, newest first within a tag, untagged last", () => {
+    expect(sortImages(images, "tag").map((i) => i.name)).toEqual(["f", "c", "d", "a", "g", "e", "b"]);
+  });
+
+  it("treats missing and blank tags as untagged", () => {
+    const legacy = [{ uploadedAt: "2026-10-01T00:00:00.000Z" }, { tag: " ", uploadedAt: "2026-10-03T00:00:00.000Z" }, { tag: "Post 1", uploadedAt: "2026-10-02T00:00:00.000Z" }];
+    expect(sortImages(legacy, "tag").map((i) => i.uploadedAt.slice(8, 10))).toEqual(["02", "03", "01"]);
   });
 });

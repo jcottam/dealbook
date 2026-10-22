@@ -11,7 +11,7 @@ import type {
 } from "@/lib/social-post-preview/types";
 
 export const DEFAULT_PROFILE_ID = "dealbook";
-const DEFAULT_PLATFORMS: Platform[] = ["instagram", "x"];
+const DEFAULT_PLATFORMS: Platform[] = ["instagram"];
 
 function defaultInstagram(): InstagramFields {
   return { caption: "", crop: "4:5" };

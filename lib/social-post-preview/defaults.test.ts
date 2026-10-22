@@ -6,7 +6,7 @@ describe("normalizePost", () => {
     const post = normalizePost({}, { id: "abc123", now: "2026-01-01T00:00:00.000Z" });
     expect(post.id).toBe("abc123");
     expect(post.profileId).toBe("dealbook");
-    expect(post.platforms).toEqual(["instagram", "x"]);
+    expect(post.platforms).toEqual(["instagram"]);
     expect(post.instagram).toEqual({ caption: "", crop: "4:5", coverSeconds: undefined });
     expect(post.x).toEqual({ text: "", crop: "original" });
     expect(post.media).toEqual([]);

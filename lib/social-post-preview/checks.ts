@@ -25,6 +25,16 @@ function mediaDisplayName(pathname: string): string {
   return imageDisplayName(pathname);
 }
 
+/** Hide the editor alert until the user adds media or starts typing copy. */
+export function shouldShowShareBlockers(post: SocialPost): boolean {
+  const validation = validateForShare(post);
+  if (validation.ok) return false;
+  const noMedia = post.media.length === 0;
+  const captionsBlank = !post.instagram.caption.trim() && !post.x.text.trim();
+  if (noMedia && captionsBlank) return false;
+  return true;
+}
+
 export function validateForShare(post: SocialPost): PreviewShareValidation {
   const issues: PreviewShareIssue[] = [];
   const igOn = post.platforms.includes("instagram");

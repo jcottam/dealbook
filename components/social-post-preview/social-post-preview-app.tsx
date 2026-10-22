@@ -21,7 +21,7 @@ import { PlatformToggles } from "@/components/social-post-preview/platform-toggl
 import { ShareBlockers } from "@/components/social-post-preview/share-blockers";
 import { ShareHistory } from "@/components/social-post-preview/share-history";
 import { XFieldsSection } from "@/components/social-post-preview/x-fields";
-import { validateForShare } from "@/lib/social-post-preview/checks";
+import { shouldShowShareBlockers, validateForShare } from "@/lib/social-post-preview/checks";
 import { normalizePost, toPublicPost } from "@/lib/social-post-preview/defaults";
 import { previewShareUrl } from "@/lib/social-post-preview/share-url";
 import type { PreviewPostSummary, SocialPost } from "@/lib/social-post-preview/types";
@@ -46,6 +46,7 @@ export function SocialPostPreviewApp() {
   const { copy, copiedKey } = useCopy();
 
   const validation = useMemo(() => validateForShare(draft), [draft]);
+  const showShareBlockers = useMemo(() => shouldShowShareBlockers(draft), [draft]);
   const publicPost = useMemo(() => toPublicPost({ ...draft, id: editingId ?? draft.id }), [draft, editingId]);
   const profile = getSocialProfile(draft.profileId);
 
@@ -202,7 +203,9 @@ export function SocialPostPreviewApp() {
                   instagramOn={draft.platforms.includes("instagram")}
                 />
               ) : null}
-              {!validation.ok ? <ShareBlockers issues={validation.issues} /> : null}
+              {showShareBlockers && !validation.ok ? (
+                <ShareBlockers issues={validation.issues} />
+              ) : null}
               <Button
                 type="button"
                 disabled={!validation.ok || saving}

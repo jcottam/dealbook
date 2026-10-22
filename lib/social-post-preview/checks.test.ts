@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizePost } from "@/lib/social-post-preview/defaults";
-import { validateForShare } from "@/lib/social-post-preview/checks";
+import { shouldShowShareBlockers, validateForShare } from "@/lib/social-post-preview/checks";
 import type { SocialPost } from "@/lib/social-post-preview/types";
 
 function base(over: Partial<SocialPost> = {}): SocialPost {
@@ -24,6 +24,28 @@ function base(over: Partial<SocialPost> = {}): SocialPost {
     ...over,
   });
 }
+
+describe("shouldShowShareBlockers", () => {
+  it("hides blockers on an empty draft", () => {
+    const post = normalizePost({});
+    expect(validateForShare(post).ok).toBe(false);
+    expect(shouldShowShareBlockers(post)).toBe(false);
+  });
+
+  it("shows blockers when media is added but captions are empty", () => {
+    const post = base({ instagram: { caption: "", crop: "4:5" }, x: { text: "", crop: "original" } });
+    expect(shouldShowShareBlockers(post)).toBe(true);
+  });
+
+  it("shows blockers when copy is entered but media is missing", () => {
+    const post = base({
+      media: [],
+      instagram: { caption: "Hello", crop: "4:5" },
+      x: { text: "", crop: "original" },
+    });
+    expect(shouldShowShareBlockers(post)).toBe(true);
+  });
+});
 
 describe("validateForShare", () => {
   it("passes a valid post", () => {

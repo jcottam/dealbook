@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore, useState } from "react";
+import { useCallback, useEffect, useSyncExternalStore, useState } from "react";
 import { MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import type { PreviewComment } from "@/lib/social-post-preview/types";
 
 const AUTHOR_STORAGE_KEY = "media-utils-preview-comment-author";
 const AUTHOR_STORAGE_EVENT = "media-utils-preview-comment-author-change";
+const COMMENT_POLL_MS = 10_000;
 
 function readStoredAuthor(): string {
   try {
@@ -75,8 +76,9 @@ export function PreviewCommentsPanel({ previewId, initialComments }: Props) {
   const author = authorOverride ?? storedAuthor;
   const [text, setText] = useState("");
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (!silent) setLoading(true);
     try {
       const res = await fetch(`/api/social-post-preview/${previewId}/comments`);
       if (!res.ok) return;
@@ -84,9 +86,28 @@ export function PreviewCommentsPanel({ previewId, initialComments }: Props) {
       setComments(data.comments ?? []);
       setLoaded(true);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [previewId]);
+
+  useEffect(() => {
+    const poll = () => {
+      if (document.visibilityState === "hidden") return;
+      void refresh({ silent: true });
+    };
+
+    const id = window.setInterval(poll, COMMENT_POLL_MS);
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void refresh({ silent: true });
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [refresh]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -118,6 +139,7 @@ export function PreviewCommentsPanel({ previewId, initialComments }: Props) {
       setText("");
       writeStoredAuthor(trimmedAuthor);
       setAuthorOverride(null);
+      setOpen(false);
       toast.success("Comment posted.");
     } finally {
       setSubmitting(false);

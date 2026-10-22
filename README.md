@@ -97,7 +97,7 @@ Deleted images can stay in the CDN cache for up to a minute.
 
 ### Social post preview (`/social-post-preview`)
 
-Assemble media and per-platform copy, preview Instagram feed and X cards, then **Create share link** (internal name stays private). Share URLs are always `https://media-utils.com/preview/<id>` (`lib/social-post-preview/share-url.ts`). Saving again updates the same link; newest `post-<timestamp>.json` in `previews/<id>/` wins.
+Assemble media and per-platform copy, preview Instagram feed and X cards, then **Create share link** (internal name stays private). Share URLs use the current site origin (`/preview/<id>`; `lib/social-post-preview/share-url.ts` — localhost in dev, production domain when deployed). Saving again updates the same link; newest `post-<timestamp>.json` in `previews/<id>/` wins.
 
 - **Share history:** copy, edit, open team view, delete.
 - **Media:** upload or pick from existing `images/` and `clips/` in the public store.

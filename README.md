@@ -2,6 +2,17 @@
 
 A growing set of tools to package and prepare content for social media and production. Built with Next.js on Vercel; domain: [media-utils.com](https://media-utils.com).
 
+## Tools
+
+| Route | Purpose |
+|-------|---------|
+| `/clipper` | Trim video from an allowlisted URL or a private `uploads/` file; export MP4 to `clips/`; optional transcription |
+| `/images` | Upload images to `images/`; labels, tags, and sheet copy for the DealBook calendar |
+| `/social-post-preview` | Build Instagram and X mockups, create named share links, manage share history |
+| `/preview/<id>` | View-only review page for a share link (mockups + team comments). Not in the sidebar |
+
+Internal routes (`/`, `/clipper`, `/images`, `/social-post-preview`) are meant to sit behind **Cloudflare Zero Trust**. Share links at `/preview/<id>` are for reviewers; editors who pass Access may see **Edit Preview** in the header (see **Access** below).
+
 ## Repository layout
 
 | Path | Purpose |
@@ -44,7 +55,20 @@ pnpm try:transcribe '<url>' 60 120   # extract + transcribe a range from the CLI
 pnpm try:clip '<url>' 60 120 team    # export a clip (team | copy) and print the public download URL
 ```
 
-Blob: private **`media-utils`** for source uploads (`BLOB_STORE_ID` + OIDC; client uploads use presigned URLs); public **`media-utils-clips-public`** for exported clips and images (`BLOB_READ_WRITE_TOKEN`). Mimir URLs are read directly in Sandbox. Local files upload to private `uploads/` (up to 5 GB); clips land in public `clips/` and images in public `images/`, both with stable URLs. Nothing is deleted automatically.
+Blob: private **`media-utils`** for source uploads (`BLOB_STORE_ID` + OIDC; client uploads use presigned URLs); public **`media-utils-clips-public`** for exported clips, images, and social preview data (`BLOB_READ_WRITE_TOKEN`). Mimir URLs are read directly in Sandbox. Local files upload to private `uploads/` (up to 5 GB); public prefixes are `clips/`, `images/`, and `previews/<id>/` (post JSON + review comments). Nothing is deleted automatically.
+
+### Access (Cloudflare Zero Trust)
+
+Production assumes **Cloudflare Access** on the main app. Authenticated requests include identity headers (`cf-access-authenticated-user-email`, etc.). **`lib/media-utils-admins.ts`** decides who counts as an editor:
+
+- **`jcottam@gmail.com`** is always an admin in code.
+- Optional **`MEDIA_UTILS_ADMIN_EMAILS`** (comma-separated on Vercel): when set, only those emails plus the core admin get editor affordances; when unset, anyone who passes Access is an admin.
+
+On `/preview/<id>`, admins see **Edit Preview** → `/social-post-preview?edit=<id>`. Local `pnpm dev` does not send Access headers unless you route through Access.
+
+### Video clipper (`/clipper`)
+
+See CLI helpers above (`pnpm try:clip`, `pnpm try:transcribe`). Exported clips use the public store under `clips/<uuid>/`. Labels and sheet copy work the same as images (`PUT /api/labels`, `lib/sheet-format.ts`).
 
 ### Image uploader (`/images`)
 
@@ -70,6 +94,17 @@ Blob setup (once per Vercel project):
 4. Locally: `vercel env pull .env.local`.
 
 Deleted images can stay in the CDN cache for up to a minute.
+
+### Social post preview (`/social-post-preview`)
+
+Assemble media and per-platform copy, preview Instagram feed and X cards, then **Create share link** (internal name stays private). Share URLs are always `https://media-utils.com/preview/<id>` (`lib/social-post-preview/share-url.ts`). Saving again updates the same link; newest `post-<timestamp>.json` in `previews/<id>/` wins.
+
+- **Share history:** copy, edit, open team view, delete.
+- **Media:** upload or pick from existing `images/` and `clips/` in the public store.
+- **Profiles:** mockup handles/avatars come from workspace config (`workspaces/dealbook/social-profile.ts` via `lib/social-profiles.ts`); keep tool code workspace-agnostic.
+- **Team view** (`/preview/<id>`): mockups only; floating **Comments** control opens a sheet to read and post feedback (name required). Comments are `comment-<timestamp>.json` beside the post in Blob; API: `/api/social-post-preview/[id]/comments`.
+
+API routes under `/api/social-post-preview` require the public Blob store (same as images/clips).
 
 `.env.example` lists the variables. To rebuild the ffmpeg snapshot, run `pnpm sandbox:snapshot` and update `FFMPEG_SNAPSHOT_ID` in Vercel.
 

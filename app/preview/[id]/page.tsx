@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { PublicPreview } from "@/components/social-post-preview/public-preview";
+import { isMediaUtilsAdmin } from "@/lib/media-utils-admins";
+import { listPreviewComments } from "@/lib/social-post-preview/comments";
 import { readPublicPreviewPost } from "@/lib/social-post-preview/storage";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -11,7 +14,9 @@ export const metadata: Metadata = {
 
 export default async function PreviewSharePage({ params }: PageProps) {
   const { id } = await params;
+  const canEdit = isMediaUtilsAdmin(await headers());
   const post = await readPublicPreviewPost(id);
+  const initialComments = post ? (await listPreviewComments(id)) ?? [] : [];
 
   if (!post) {
     return (
@@ -23,7 +28,7 @@ export default async function PreviewSharePage({ params }: PageProps) {
 
   return (
     <main>
-      <PublicPreview post={post} />
+      <PublicPreview post={post} canEdit={canEdit} initialComments={initialComments} />
     </main>
   );
 }

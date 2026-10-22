@@ -54,3 +54,10 @@ export type PreviewPostSummary = {
   thumbnailUrl: string | null;
   updatedAt: string;
 };
+
+export type PreviewComment = {
+  id: string;
+  author: string;
+  text: string;
+  createdAt: string;
+};

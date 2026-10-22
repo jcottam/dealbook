@@ -8,7 +8,9 @@ Instructions for humans and coding agents working in this repo.
 
 - **Tool registry:** `lib/tools.ts`. Each tool has a `slug` and is served at `/<slug>` from `app/<slug>/page.tsx`, with components in `components/<slug>/`. The sidebar and dashboard read the registry, so register new tools there.
 - **Shared media helpers:** `lib/media/` (ffmpeg args, Vercel Sandbox, transcription, Blob exports).
-- **Blob stores:** private `media-utils` (OIDC + `BLOB_STORE_ID` + `BLOB_WEBHOOK_PUBLIC_KEY`) for source uploads under `uploads/` via `handleUploadPresigned` / `uploadPresigned`; public `media-utils-clips-public` (`BLOB_READ_WRITE_TOKEN`) for `clips/` and `images/` via `handleUpload`. When both are configured the SDK defaults to OIDC, so public-store calls must pass `publicBlobToken()` from `lib/blob.ts` explicitly. Do not use `handleUpload` for private uploads — it signs with `BLOB_READ_WRITE_TOKEN` (the public store).
+- **Blob stores:** private `media-utils` (OIDC + `BLOB_STORE_ID` + `BLOB_WEBHOOK_PUBLIC_KEY`) for source uploads under `uploads/` via `handleUploadPresigned` / `uploadPresigned`; public `media-utils-clips-public` (`BLOB_READ_WRITE_TOKEN`) for `clips/`, `images/`, and social preview data under `previews/<id>/` via `handleUpload` / `put` with `publicBlobToken()`. When both are configured the SDK defaults to OIDC, so public-store calls must pass `publicBlobToken()` from `lib/blob.ts` explicitly. Do not use `handleUpload` for private uploads — it signs with `BLOB_READ_WRITE_TOKEN` (the public store).
+- **Social post preview:** editor at `/social-post-preview` (`components/social-post-preview/`, `lib/social-post-preview/`). Registry slug `social-post-preview`. Public share page at `app/preview/[id]/page.tsx` (not a registered tool). Post bodies: `previews/<id>/post-<timestamp>.json` (newest wins; `lib/social-post-preview/storage.ts`). Review comments: `previews/<id>/comment-<timestamp>.json` (`lib/social-post-preview/comments.ts`, `GET`/`POST` `app/api/social-post-preview/[id]/comments/route.ts`). Share URL origin is fixed in `lib/social-post-preview/share-url.ts`; editor deep link `previewEditorPath(id)` → `/social-post-preview?edit=<id>`. Mockup accounts: `lib/social-profiles.ts` + per-workspace files (today `workspaces/dealbook/social-profile.ts`). Validation before save/share: `lib/social-post-preview/checks.ts`.
+- **Access / admins:** `lib/cloudflare-access.ts` reads Cloudflare Access identity headers. `lib/media-utils-admins.ts` defines who is an editor (`CORE_MEDIA_UTILS_ADMIN_EMAILS`, optional `MEDIA_UTILS_ADMIN_EMAILS`). Used for **Edit Preview** on the share page; internal tools are expected to be protected by Access at the edge, not by app login.
 - **Asset labels:** every public image or clip lives in its own folder (`images/<id>/<file>`, `clips/<uuid>/<file>`), and its optional label is a sidecar blob in that folder (`lib/asset-labels.ts`). Images can also carry one tag (e.g. "Post 1") as a `tag-…` sidecar in the same folder (`PUT /api/images/tag`); tags aren't part of sheet copy. Keep that layout for new public asset types so `PUT /api/labels` and folder deletes keep working. Text for the content calendar's column J comes from `lib/sheet-format.ts`, shared by every tool, so keep one format.
 - **Tests:** Vitest runs `lib/**/*.test.ts` and `app/**/*.test.ts` (route handlers, with `@vercel/blob` mocked). DealBook calendar tests run via `pnpm test:dealbook`.
 - **Old URLs:** `/tools/<slug>` permanently redirects to `/<slug>` (`next.config.ts`).
@@ -58,14 +60,35 @@ The package manager is **pnpm** (pinned in `package.json` `packageManager`). Don
 
 The Next.js app deploys to Vercel (`pnpm build`) as the `media-utils` project. DealBook calendar changes ship via the **committed** CSV, not live Sheets: sync → commit CSV → push.
 
+## Code touchpoints for DealBook calendar changes
+
+- **Parse/build:** `workspaces/dealbook/scripts/build-data.mjs`, `lib/csv.mjs`, `lib/parse-source.mjs`, `lib/post-model.mjs`
+- **Tests:** `workspaces/dealbook/test/calendar.test.mjs`, `test/parsing.test.mjs`
+- **Next UI:** root `app/`
+
+If column layout in the sheet changes, update `COL` in `workspaces/dealbook/scripts/build-data.mjs` and tests together.
+
+## Code touchpoints for social post preview
+
+- **Types / defaults:** `lib/social-post-preview/types.ts`, `defaults.ts`, `limits.ts`
+- **Blob I/O:** `storage.ts` (posts), `comments.ts` (review thread)
+- **API:** `app/api/social-post-preview/route.ts`, `[id]/route.ts`, `[id]/comments/route.ts`
+- **UI:** `components/social-post-preview/social-post-preview-app.tsx` (editor + history), `public-preview.tsx`, `preview-comments-panel.tsx`; mockups under `components/social-post-preview/mockups/`
+- **Tests:** `lib/social-post-preview/*.test.ts`, `app/api/social-post-preview/**/*.test.ts`
+- **Design reference (not normative):** `docs/superpowers/specs/2026-10-21-social-post-preview-design.md`
+
+Deleting a preview (`DELETE` `/api/social-post-preview/[id]`) removes the whole `previews/<id>/` folder (post + comments).
+
 ## How to update documentation
 
 ### `README.md` (operators & new contributors)
 
 Update when **user-facing behavior or commands** change:
 
+- **Tools** table and per-tool sections (`/clipper`, `/images`, `/social-post-preview`, `/preview/<id>`)
 - Repository layout tables → new top-level dirs, new workspaces, or changed roles of workspace folders
 - Install / dev / deploy steps → new package scripts or hosting fields
+- Blob prefixes, Cloudflare Access, and env vars in `.env.example`
 - What deploy includes vs local-only features
 
 Keep README short. Link to **`AGENTS.md`** for source-of-truth hierarchy and agent workflows.
@@ -75,6 +98,7 @@ Keep README short. Link to **`AGENTS.md`** for source-of-truth hierarchy and age
 Update when **workflow, sheet IDs, or agent rules** change:
 
 - New tools or workspaces that change the structure above
+- Social post preview: Blob layout under `previews/`, comment API, share URL origin (`share-url.ts`), Access/admin rules (`media-utils-admins.ts`)
 - New sync script flags or manifest fields in `calendar-source.json`
 - Changes to what is authoritative (e.g. if research moves to another system)
 - Commit conventions or required checks after sync
@@ -86,14 +110,6 @@ Update only for **on-disk media layout** conventions.
 ### Do not duplicate
 
 - Sheet URL and `gid` live in **`workspaces/dealbook/source/calendar-source.json`**; README/AGENTS link to it or the edit URL, not a second copy of IDs unless necessary for readability.
-
-## Code touchpoints for DealBook calendar changes
-
-- **Parse/build:** `workspaces/dealbook/scripts/build-data.mjs`, `lib/csv.mjs`, `lib/parse-source.mjs`, `lib/post-model.mjs`
-- **Tests:** `workspaces/dealbook/test/calendar.test.mjs`, `test/parsing.test.mjs`
-- **Next UI:** root `app/`
-
-If column layout in the sheet changes, update `COL` in `workspaces/dealbook/scripts/build-data.mjs` and tests together.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

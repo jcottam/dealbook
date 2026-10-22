@@ -43,12 +43,22 @@ export function InstagramFeedCard({ profile, post, className }: Props) {
             <PreviewMedia
               item={current}
               videoStart={post.instagram.coverSeconds ?? 0}
+              reelAutoplay
               className="absolute inset-0"
             />
           </div>
         ) : type === "carousel" && items.length ? (
           <div className="relative w-full" style={{ aspectRatio: `${cropAspect}` }}>
-            {current ? <PreviewMedia item={current} className="absolute inset-0" /> : <MediaPlaceholder />}
+            {current ? (
+              <PreviewMedia
+                item={current}
+                className="absolute inset-0"
+                reelAutoplay={current.kind === "video"}
+                videoStart={current.kind === "video" ? 0 : undefined}
+              />
+            ) : (
+              <MediaPlaceholder />
+            )}
             {items.length > 1 ? (
               <>
                 <button
@@ -78,7 +88,16 @@ export function InstagramFeedCard({ profile, post, className }: Props) {
           </div>
         ) : (
           <div className="relative w-full" style={{ aspectRatio: `${cropAspect}` }}>
-            {current ? <PreviewMedia item={current} className="absolute inset-0" /> : <MediaPlaceholder />}
+            {current ? (
+              <PreviewMedia
+                item={current}
+                className="absolute inset-0"
+                reelAutoplay={current.kind === "video"}
+                videoStart={current.kind === "video" ? 0 : undefined}
+              />
+            ) : (
+              <MediaPlaceholder />
+            )}
           </div>
         )}
       </div>

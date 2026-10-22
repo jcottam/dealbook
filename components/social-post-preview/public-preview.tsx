@@ -28,7 +28,11 @@ export function PublicPreview({ post }: Props) {
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col gap-6 bg-white px-4 py-6">
       <header className="flex items-center justify-between gap-3 border-b border-border/50 pb-3">
         <span className="text-sm font-semibold tracking-tight text-foreground">Preview</span>
-        <time dateTime={post.updatedAt} className="text-right text-[11px] leading-none text-muted-foreground tabular-nums">
+        <time
+          dateTime={post.updatedAt}
+          suppressHydrationWarning
+          className="text-right text-[11px] leading-none text-muted-foreground tabular-nums"
+        >
           Updated {updatedLabel}
         </time>
       </header>

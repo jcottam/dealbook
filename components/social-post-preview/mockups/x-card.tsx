@@ -86,7 +86,7 @@ function XMediaGrid({
         : Math.min(16 / 9, Math.max(4 / 5, item.width / item.height));
     return (
       <div className={cn("relative overflow-hidden rounded-2xl border", className)} style={{ aspectRatio: `${aspect}` }}>
-        <PreviewMedia item={item} className="absolute inset-0" />
+        <PreviewMedia item={item} className="absolute inset-0" reelAutoplay={item.kind === "video"} />
       </div>
     );
   }
@@ -102,7 +102,7 @@ function XMediaGrid({
     <div className={cn("grid gap-0.5 overflow-hidden rounded-2xl border", gridClass, className)} style={{ minHeight: 200 }}>
       {items.map((item) => (
         <div key={item.pathname} className="relative min-h-[96px] bg-black">
-          <PreviewMedia item={item} className="absolute inset-0" />
+          <PreviewMedia item={item} className="absolute inset-0" reelAutoplay={item.kind === "video"} />
         </div>
       ))}
     </div>

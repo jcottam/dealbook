@@ -2,12 +2,20 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Copy, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, Pencil, Play, Trash2 } from "lucide-react";
+import { ClipThumbnail } from "@/components/social-post-preview/clip-thumbnail";
 import { Button } from "@/components/ui/button";
 import { inferredTypeLabel } from "@/lib/social-post-preview/infer-type";
 import { previewShareUrl } from "@/lib/social-post-preview/share-url";
 import type { PreviewPostSummary } from "@/lib/social-post-preview/types";
 import { useCopy } from "@/hooks/use-copy";
+
+function formatSharedAt(iso: string): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return `${date} · ${time}`;
+}
 
 type Props = {
   items: PreviewPostSummary[];
@@ -34,26 +42,29 @@ export function ShareHistory({ items, onEdit, onRefresh }: Props) {
         const platforms = item.platforms.map((p) => (p === "instagram" ? "Instagram" : "X")).join(", ");
         return (
           <div key={item.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-            <div className="size-14 shrink-0 overflow-hidden rounded bg-muted">
+            <div className="relative size-14 shrink-0 overflow-hidden rounded bg-muted">
               {item.thumbnailUrl ? (
-                item.thumbnailUrl.includes("/clips/") || item.thumbnailUrl.endsWith(".mp4") ? (
-                  <video
-                    src={item.thumbnailUrl}
-                    muted
-                    playsInline
-                    preload="metadata"
-                    className="size-full object-cover"
-                    aria-hidden
-                  />
+                item.thumbnailKind === "video" ? (
+                  <>
+                    <ClipThumbnail url={item.thumbnailUrl} seconds={item.thumbnailSeconds} className="size-full rounded-none" />
+                    <span className="pointer-events-none absolute right-1 bottom-1 flex size-4 items-center justify-center rounded-full bg-black/60">
+                      <Play className="size-2.5 fill-white text-white" aria-hidden />
+                    </span>
+                  </>
                 ) : (
                   <Image src={item.thumbnailUrl} alt="" width={56} height={56} className="size-full object-cover" sizes="56px" />
                 )
               ) : null}
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 space-y-0.5">
               <p className="font-medium">{item.name}</p>
               <p className="text-xs text-muted-foreground">
-                {platforms} · {inferredTypeLabel(item.instagramType)} · {new Date(item.updatedAt).toLocaleString()}
+                {platforms} · {inferredTypeLabel(item.instagramType)}
+              </p>
+              <p className="text-xs text-muted-foreground tabular-nums">
+                <time dateTime={item.updatedAt} suppressHydrationWarning>
+                  {formatSharedAt(item.updatedAt)}
+                </time>
               </p>
             </div>
             <div className="flex flex-wrap gap-1">

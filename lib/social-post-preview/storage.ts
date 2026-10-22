@@ -128,13 +128,27 @@ export async function listPreviewSummaries(): Promise<PreviewPostSummary[]> {
       name: post.name,
       platforms: post.platforms,
       instagramType: inferInstagramPostType(post.media),
-      thumbnailUrl: post.media[0]?.url ?? null,
+      ...previewThumbnail(post),
       updatedAt: post.updatedAt,
     });
   }
 
   summaries.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   return summaries;
+}
+
+/** Share-history thumbnail: first media item, at the Instagram cover frame for single-video posts. */
+export function previewThumbnail(
+  post: Pick<SocialPost, "media" | "instagram">,
+): Pick<PreviewPostSummary, "thumbnailUrl" | "thumbnailKind" | "thumbnailSeconds"> {
+  const first = post.media[0];
+  if (!first) return { thumbnailUrl: null, thumbnailKind: null, thumbnailSeconds: 0 };
+  const isSingleVideo = inferInstagramPostType(post.media) === "single_video";
+  return {
+    thumbnailUrl: first.url,
+    thumbnailKind: first.kind,
+    thumbnailSeconds: first.kind === "video" && isSingleVideo ? post.instagram.coverSeconds ?? 0 : 0,
+  };
 }
 
 /** Exported for tests — pick newest post file from a folder listing. */

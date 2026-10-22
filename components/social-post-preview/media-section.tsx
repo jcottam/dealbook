@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Image from "next/image";
 import { ArrowDown, ArrowUp, GripVertical, Trash2 } from "lucide-react";
 import { upload as uploadToBlob } from "@vercel/blob/client";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ import {
   measureImageFile,
   measureVideoFile,
 } from "@/lib/social-post-preview/measure-media";
+import { compressImageForSocialUpload } from "@/lib/social-post-preview/compress-image";
 import { checkPreviewUploadFile } from "@/lib/social-post-preview/media-preview";
 import type { SocialMediaItem } from "@/lib/social-post-preview/types";
 import { checkImageFile, imageUploadPathname, newImageId } from "@/lib/images";
@@ -54,19 +56,20 @@ export function MediaSection({ media, onChange }: Props) {
       }
       try {
         if (previewCheck.kind === "image") {
-          const imgCheck = checkImageFile(file);
+          const uploadFile = await compressImageForSocialUpload(file);
+          const imgCheck = checkImageFile(uploadFile);
           if ("error" in imgCheck) {
             toast.error(imgCheck.error);
             continue;
           }
           const id = newImageId();
-          const pathname = imageUploadPathname(id, file.name, imgCheck.contentType);
-          const blob = await uploadToBlob(pathname, file, {
+          const pathname = imageUploadPathname(id, uploadFile.name, imgCheck.contentType);
+          const blob = await uploadToBlob(pathname, uploadFile, {
             access: "public",
             handleUploadUrl: "/api/images/upload",
             contentType: imgCheck.contentType,
           });
-          const measured = await measureImageFile(file);
+          const measured = await measureImageFile(uploadFile);
           mergeMedia([buildMediaItem(blob.pathname, blob.url, "image", measured)]);
         } else {
           const clipCheck = checkClipFile(file);
@@ -104,8 +107,7 @@ export function MediaSection({ media, onChange }: Props) {
               {item.kind === "video" ? (
                 <video src={item.url} className="h-full w-full object-cover" muted />
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element -- blob thumbnail
-                <img src={item.url} alt="" className="h-full w-full object-cover" />
+                <Image src={item.url} alt="" width={48} height={48} className="size-full object-cover" sizes="48px" />
               )}
             </div>
             <p className="min-w-0 flex-1 truncate text-xs">{item.pathname}</p>

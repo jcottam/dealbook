@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { BarChart2, Heart, MessageCircle, Repeat2, Share } from "lucide-react";
 import { PreviewMedia } from "@/components/social-post-preview/mockups/preview-media";
 import { FormattedCaption } from "@/lib/social-post-preview/caption-format";
@@ -22,8 +23,7 @@ export function XCard({ profile, post, className }: Props) {
   return (
     <article className={cn("mx-auto w-full max-w-[390px] rounded-xl border bg-white p-3 text-black shadow-sm", className)}>
       <header className="mb-2 flex gap-2 text-sm">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={profile.avatarSrc} alt="" className="size-10 rounded-full border object-cover" />
+        <Image src={profile.avatarSrc} alt="" width={40} height={40} className="size-10 rounded-full border object-cover" sizes="40px" />
         <div className="min-w-0 leading-tight">
           <p className="font-bold">
             {profile.x.displayName}{" "}
@@ -85,8 +85,8 @@ function XMediaGrid({
         ? xSinglePhotoAspect(crop, item.width, item.height)
         : Math.min(16 / 9, Math.max(4 / 5, item.width / item.height));
     return (
-      <div className={cn("overflow-hidden rounded-2xl border", className)} style={{ aspectRatio: `${aspect}` }}>
-        <PreviewMedia item={item} className="h-full w-full" />
+      <div className={cn("relative overflow-hidden rounded-2xl border", className)} style={{ aspectRatio: `${aspect}` }}>
+        <PreviewMedia item={item} className="absolute inset-0" />
       </div>
     );
   }

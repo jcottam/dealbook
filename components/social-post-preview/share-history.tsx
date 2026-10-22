@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Copy, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { inferredTypeLabel } from "@/lib/social-post-preview/infer-type";
@@ -35,8 +36,7 @@ export function ShareHistory({ items, onEdit, onRefresh }: Props) {
           <div key={item.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
             <div className="size-14 shrink-0 overflow-hidden rounded bg-muted">
               {item.thumbnailUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- blob thumbnail
-                <img src={item.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                <Image src={item.thumbnailUrl} alt="" width={56} height={56} className="size-full object-cover" sizes="56px" />
               ) : null}
             </div>
             <div className="min-w-0 flex-1">

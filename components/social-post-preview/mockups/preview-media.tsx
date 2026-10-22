@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { MediaPlaceholder } from "@/components/social-post-preview/mockups/media-placeholder";
 import type { SocialMediaItem } from "@/lib/social-post-preview/types";
 import { cn } from "@/lib/utils";
+
+/** Display width for mockups (~phone); `next/image` serves smaller optimized variants. */
+const MOCKUP_IMAGE_SIZES = "(max-width: 512px) 100vw, 512px";
 
 type PreviewMediaProps = {
   item: SocialMediaItem;
@@ -33,13 +37,15 @@ export function PreviewMedia({ item, className, style, videoStart = 0, objectFit
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- blob URLs for preview mockups
-    <img
-      src={item.url}
-      alt=""
-      className={cn("h-full w-full bg-black", objectFit === "cover" ? "object-cover" : "object-contain", className)}
-      style={style}
-      onError={() => setBroken(true)}
-    />
+    <div className={cn("relative size-full min-h-0 bg-black", className)} style={style}>
+      <Image
+        src={item.url}
+        alt=""
+        fill
+        sizes={MOCKUP_IMAGE_SIZES}
+        className={objectFit === "cover" ? "object-cover" : "object-contain"}
+        onError={() => setBroken(true)}
+      />
+    </div>
   );
 }

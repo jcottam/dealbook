@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -131,8 +132,7 @@ export function MediaPickerDialog({ onClose, selectedPathnames, onConfirm }: Pro
                       disabled && "opacity-50",
                     )}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element -- library thumbnails from Blob */}
-                    <img src={img.url} alt="" className="size-12 rounded object-cover" />
+                    <Image src={img.url} alt="" width={48} height={48} className="size-12 rounded object-cover" sizes="48px" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{img.label || img.name}</p>
                       <p className="truncate text-xs text-muted-foreground">{img.pathname}</p>

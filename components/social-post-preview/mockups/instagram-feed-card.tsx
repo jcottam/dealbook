@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Bookmark, Heart, MessageCircle, Send } from "lucide-react";
 import { MediaPlaceholder } from "@/components/social-post-preview/mockups/media-placeholder";
 import { PreviewMedia } from "@/components/social-post-preview/mockups/preview-media";
@@ -29,8 +30,7 @@ export function InstagramFeedCard({ profile, post, className }: Props) {
   return (
     <article className={cn("mx-auto w-full max-w-[390px] overflow-hidden rounded-lg border bg-white text-black shadow-sm", className)}>
       <header className="flex items-center gap-2 px-3 py-2 text-sm">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={profile.avatarSrc} alt="" className="size-8 rounded-full border object-cover" />
+        <Image src={profile.avatarSrc} alt="" width={32} height={32} className="size-8 rounded-full border object-cover" sizes="32px" />
         <span className="font-semibold">
           {profile.instagram.handle}{" "}
           <span className="font-normal text-muted-foreground">(preview)</span>

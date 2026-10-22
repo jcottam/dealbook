@@ -185,7 +185,7 @@ export function MediaSection({ media, onChange }: Props) {
         <p className="text-sm text-muted-foreground">
           {inferredTypeLabel(type)} · {media.length} item{media.length === 1 ? "" : "s"}
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             ref={inputRef}
             type="file"

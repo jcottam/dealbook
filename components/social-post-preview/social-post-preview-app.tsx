@@ -183,8 +183,8 @@ export function SocialPostPreviewApp() {
             </div>
           ) : null}
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="min-w-0 space-y-4">
               <PlatformToggles platforms={draft.platforms} onChange={(platforms) => updateDraft({ platforms })} />
               <MediaSection media={draft.media} onChange={(media) => updateDraft({ media })} />
               {draft.platforms.includes("instagram") ? (
@@ -236,7 +236,7 @@ export function SocialPostPreviewApp() {
                 </div>
               ) : null}
             </div>
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               {draft.platforms.includes("instagram") ? (
                 <InstagramFeedCard profile={profile} post={publicPost} />
               ) : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -223,7 +224,10 @@ export function SocialPostPreviewApp() {
                       {copiedKey === "share" ? "Copied" : "Copy link"}
                     </Button>
                     <Button type="button" size="sm" variant="outline" asChild>
-                      <a href={savedUrl} target="_blank" rel="noreferrer">See what the team sees</a>
+                      <a href={savedUrl} target="_blank" rel="noreferrer">
+                        <ExternalLink className="size-3.5" aria-hidden />
+                        Team view
+                      </a>
                     </Button>
                   </div>
                 </div>

@@ -1,13 +1,13 @@
 import type { NextConfig } from "next";
 import type { RemotePattern } from "next/dist/shared/lib/image-config";
 
-/** Thumbnails for the image uploader. Scoped to this project's public store when its token is set at build time. */
-function publicImagesPattern(): RemotePattern {
+/** Public Blob store (images, clips, preview assets). Scoped when BLOB_READ_WRITE_TOKEN is set at build time. */
+function publicBlobPattern(pathname: string): RemotePattern {
   const storeId = process.env.BLOB_READ_WRITE_TOKEN?.split("_")[3];
   return {
     protocol: "https",
     hostname: storeId ? `${storeId.toLowerCase()}.public.blob.vercel-storage.com` : "*.public.blob.vercel-storage.com",
-    pathname: "/images/**",
+    pathname,
     search: "",
   };
 }
@@ -17,7 +17,9 @@ const nextConfig: NextConfig = {
   redirects() {
     return [{ source: "/tools/:slug", destination: "/:slug", permanent: true }];
   },
-  images: { remotePatterns: [publicImagesPattern()] },
+  images: {
+    remotePatterns: [publicBlobPattern("/images/**"), publicBlobPattern("/clips/**"), publicBlobPattern("/previews/**")],
+  },
 };
 
 export default nextConfig;

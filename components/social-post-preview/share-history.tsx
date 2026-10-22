@@ -36,7 +36,18 @@ export function ShareHistory({ items, onEdit, onRefresh }: Props) {
           <div key={item.id} className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
             <div className="size-14 shrink-0 overflow-hidden rounded bg-muted">
               {item.thumbnailUrl ? (
-                <Image src={item.thumbnailUrl} alt="" width={56} height={56} className="size-full object-cover" sizes="56px" />
+                item.thumbnailUrl.includes("/clips/") || item.thumbnailUrl.endsWith(".mp4") ? (
+                  <video
+                    src={item.thumbnailUrl}
+                    muted
+                    playsInline
+                    preload="metadata"
+                    className="size-full object-cover"
+                    aria-hidden
+                  />
+                ) : (
+                  <Image src={item.thumbnailUrl} alt="" width={56} height={56} className="size-full object-cover" sizes="56px" />
+                )
               ) : null}
             </div>
             <div className="min-w-0 flex-1">

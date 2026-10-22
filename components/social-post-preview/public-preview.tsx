@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { InstagramFeedCard } from "@/components/social-post-preview/mockups/instagram-feed-card";
 import { PreviewCommentsPanel } from "@/components/social-post-preview/preview-comments-panel";
+import { PreviewUpdatedAt } from "@/components/social-post-preview/preview-updated-at";
 import { XCard } from "@/components/social-post-preview/mockups/x-card";
 import { getSocialProfile } from "@/lib/social-profiles";
 import { previewEditorPath } from "@/lib/social-post-preview/share-url";
@@ -12,22 +13,8 @@ type Props = {
   initialComments?: PreviewComment[];
 };
 
-function formatUpdatedAt(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const sameYear = d.getFullYear() === now.getFullYear();
-  const date = d.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    ...(sameYear ? {} : { year: "numeric" }),
-  });
-  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return `${date} · ${time}`;
-}
-
 export function PublicPreview({ post, canEdit = false, initialComments = [] }: Props) {
   const profile = getSocialProfile(post.profileId);
-  const updatedLabel = formatUpdatedAt(post.updatedAt);
 
   return (
     <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col gap-6 bg-white px-4 py-6">
@@ -43,13 +30,7 @@ export function PublicPreview({ post, canEdit = false, initialComments = [] }: P
               Edit Preview
             </Link>
           ) : null}
-          <time
-            dateTime={post.updatedAt}
-            suppressHydrationWarning
-            className="text-right text-[11px] leading-none text-muted-foreground tabular-nums"
-          >
-            Updated {updatedLabel}
-          </time>
+          <PreviewUpdatedAt iso={post.updatedAt} />
         </div>
       </header>
       {post.platforms.includes("instagram") ? <InstagramFeedCard profile={profile} post={post} /> : null}

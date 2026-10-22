@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 function formatUpdatedAt(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
@@ -20,11 +18,7 @@ type Props = {
 };
 
 export function PreviewUpdatedAt({ iso }: Props) {
-  const [label, setLabel] = useState<string | null>(null);
-
-  useEffect(() => {
-    setLabel(formatUpdatedAt(iso));
-  }, [iso]);
+  const label = formatUpdatedAt(iso);
 
   return (
     <time
@@ -32,7 +26,7 @@ export function PreviewUpdatedAt({ iso }: Props) {
       suppressHydrationWarning
       className="text-right text-[11px] leading-none text-muted-foreground tabular-nums"
     >
-      {label ? `Updated ${label}` : "\u00a0"}
+      {`Updated ${label}`}
     </time>
   );
 }

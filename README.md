@@ -59,7 +59,7 @@ Blob: private **`media-utils`** for source uploads (`BLOB_STORE_ID` + OIDC; clie
 
 ### Access (Cloudflare Zero Trust)
 
-Production assumes **Cloudflare Access** on the main app (hostname **proxied** through Cloudflare, not DNS-only to Vercel). Only `/preview/<id>` and the preview comments API are public; see **`docs/cloudflare-access.md`** for application layout and troubleshooting. Production also enforces Access identity headers in **`middleware.ts`** (set `SKIP_CLOUDFLARE_ACCESS=1` on Vercel only for emergencies).
+Production assumes **Cloudflare Access** on the main app (hostname **proxied** through Cloudflare, not DNS-only to Vercel). Only `/preview/<id>` and the preview comments API are public; see **`docs/cloudflare-access.md`** for application layout and troubleshooting. Production also enforces Access identity headers in **`proxy.ts`** (set `SKIP_CLOUDFLARE_ACCESS=1` on Vercel only for emergencies).
 
 Authenticated requests include identity headers (`cf-access-authenticated-user-email`, etc.). **`lib/media-utils-admins.ts`** decides who counts as an editor:
 

@@ -3,7 +3,7 @@ import { isAccessPublicPath } from "@/lib/access-public-paths";
 import { isCloudflareAccessAuthenticated } from "@/lib/cloudflare-access";
 
 /** Production custom domain should sit behind Cloudflare Access; see docs/cloudflare-access.md */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   if (process.env.SKIP_CLOUDFLARE_ACCESS === "1") return NextResponse.next();
   if (process.env.VERCEL_ENV !== "production") return NextResponse.next();
 

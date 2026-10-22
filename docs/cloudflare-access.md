@@ -7,7 +7,7 @@ Internal tools (`/`, `/clipper`, `/images`, `/social-post-preview`, and their AP
 | `/preview/<id>` | Everything else on `media-utils.com` |
 | `GET`/`POST` `/api/social-post-preview/<id>/comments` | All other `/api/*` routes |
 
-The Next.js app also enforces this in production via `middleware.ts` (401 without Access identity headers), so the origin is not wide open if Zero Trust is misconfigured.
+The Next.js app also enforces this in production via `proxy.ts` (401 without Access identity headers), so the origin is not wide open if Zero Trust is misconfigured.
 
 ## If the site suddenly looks “wide open”
 

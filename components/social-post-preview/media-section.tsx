@@ -14,9 +14,10 @@ import {
   measureVideoFile,
 } from "@/lib/social-post-preview/measure-media";
 import { compressImageForSocialUpload } from "@/lib/social-post-preview/compress-image";
+import { mergeMediaItems, reorderMediaItems } from "@/lib/social-post-preview/merge-media";
 import { checkPreviewUploadFile } from "@/lib/social-post-preview/media-preview";
 import type { SocialMediaItem } from "@/lib/social-post-preview/types";
-import { checkImageFile, imageUploadPathname, newImageId } from "@/lib/images";
+import { checkImageFile, imageDisplayName, imageUploadPathname, newImageId } from "@/lib/images";
 import { checkClipFile, clipUploadPathname } from "@/lib/clips";
 import { MAX_CLIP_UPLOAD_BYTES } from "@/lib/clips";
 
@@ -25,29 +26,37 @@ type Props = {
   onChange: (media: SocialMediaItem[]) => void;
 };
 
+function formatDuration(seconds?: number): string {
+  if (seconds == null || !Number.isFinite(seconds)) return "";
+  const s = Math.floor(seconds);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function mediaKindLabel(item: SocialMediaItem): string {
+  if (item.kind === "video") {
+    const d = formatDuration(item.durationSeconds);
+    return d ? `Video · ${d}` : "Video";
+  }
+  return "Photo";
+}
+
 export function MediaSection({ media, onChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const type = inferInstagramPostType(media);
 
   const move = (index: number, dir: -1 | 1) => {
-    const next = [...media];
     const j = index + dir;
-    if (j < 0 || j >= next.length) return;
-    [next[index], next[j]] = [next[j], next[index]];
-    onChange(next);
+    if (j < 0 || j >= media.length) return;
+    onChange(reorderMediaItems(media, index, j));
   };
 
   const remove = (index: number) => onChange(media.filter((_, i) => i !== index));
 
-  const mergeMedia = (incoming: SocialMediaItem[]) => {
-    const byPath = new Map(media.map((m) => [m.pathname, m]));
-    for (const item of incoming) byPath.set(item.pathname, item);
-    onChange([...byPath.values()]);
-  };
-
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return;
+    let current = media;
     for (const file of [...files]) {
       const previewCheck = checkPreviewUploadFile(file);
       if (!previewCheck.ok) {
@@ -70,7 +79,8 @@ export function MediaSection({ media, onChange }: Props) {
             contentType: imgCheck.contentType,
           });
           const measured = await measureImageFile(uploadFile);
-          mergeMedia([buildMediaItem(blob.pathname, blob.url, "image", measured)]);
+          current = mergeMediaItems(current, [buildMediaItem(blob.pathname, blob.url, "image", measured)]);
+          onChange(current);
         } else {
           const clipCheck = checkClipFile(file);
           if ("error" in clipCheck) {
@@ -88,7 +98,8 @@ export function MediaSection({ media, onChange }: Props) {
             contentType: clipCheck.contentType,
           });
           const measured = await measureVideoFile(file);
-          mergeMedia([buildMediaItem(blob.pathname, blob.url, "video", measured)]);
+          current = mergeMediaItems(current, [buildMediaItem(blob.pathname, blob.url, "video", measured)]);
+          onChange(current);
         }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Upload failed");
@@ -100,28 +111,84 @@ export function MediaSection({ media, onChange }: Props) {
     <div className="space-y-3 rounded-lg border p-4">
       <p className="text-sm font-medium">Media</p>
       <ul className="space-y-2">
-        {media.map((item, i) => (
-          <li key={item.pathname} className="flex items-center gap-2 rounded-md border p-2">
-            <GripVertical className="size-4 shrink-0 text-muted-foreground" />
-            <div className="size-12 shrink-0 overflow-hidden rounded bg-muted">
-              {item.kind === "video" ? (
-                <video src={item.url} className="h-full w-full object-cover" muted />
-              ) : (
-                <Image src={item.url} alt="" width={48} height={48} className="size-full object-cover" sizes="48px" />
-              )}
-            </div>
-            <p className="min-w-0 flex-1 truncate text-xs">{item.pathname}</p>
-            <Button type="button" variant="ghost" size="icon" onClick={() => move(i, -1)} aria-label="Move up">
-              <ArrowUp className="size-4" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon" onClick={() => move(i, 1)} aria-label="Move down">
-              <ArrowDown className="size-4" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon" onClick={() => remove(i)} aria-label="Remove">
-              <Trash2 className="size-4" />
-            </Button>
-          </li>
-        ))}
+        {media.map((item, i) => {
+          const name = imageDisplayName(item.pathname);
+          const showSlide = media.length > 1;
+          return (
+            <li
+              key={item.pathname}
+              className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/15 px-1.5 py-1.5"
+              title={item.pathname}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragIndex === null || dragIndex === i) return;
+                onChange(reorderMediaItems(media, dragIndex, i));
+                setDragIndex(null);
+              }}
+            >
+              <button
+                type="button"
+                className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/80 active:cursor-grabbing"
+                aria-label="Drag to reorder"
+                draggable
+                onDragStart={(e) => {
+                  setDragIndex(i);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragEnd={() => setDragIndex(null)}
+              >
+                <GripVertical className="size-4 cursor-grab" aria-hidden />
+              </button>
+              <div className="relative size-11 shrink-0 overflow-hidden rounded-md bg-muted">
+                {item.kind === "video" ? (
+                  <video src={item.url} className="h-full w-full object-cover" muted />
+                ) : (
+                  <Image src={item.url} alt="" width={44} height={44} className="size-full object-cover" sizes="44px" />
+                )}
+                {showSlide ? (
+                  <span
+                    className="absolute bottom-0.5 right-0.5 rounded bg-black/65 px-1 text-[10px] font-medium leading-tight text-white tabular-nums"
+                    aria-hidden
+                  >
+                    {i + 1}
+                  </span>
+                ) : null}
+              </div>
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="truncate text-sm font-medium text-foreground">{name}</p>
+                <p className="truncate text-[11px] text-muted-foreground">{mediaKindLabel(item)}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-0.5">
+                <div className="flex items-center -space-x-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    disabled={i === 0}
+                    onClick={() => move(i, -1)}
+                    aria-label="Move up"
+                  >
+                    <ArrowUp className="size-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    disabled={i === media.length - 1}
+                    onClick={() => move(i, 1)}
+                    aria-label="Move down"
+                  >
+                    <ArrowDown className="size-3.5" />
+                  </Button>
+                </div>
+                <Button type="button" variant="ghost" size="icon-xs" onClick={() => remove(i)} aria-label="Remove">
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
@@ -148,11 +215,7 @@ export function MediaSection({ media, onChange }: Props) {
           onClose={() => setPickerOpen(false)}
           selectedPathnames={new Set(media.map((m) => m.pathname))}
           onConfirm={(items) => {
-            const map = new Map(media.map((m) => [m.pathname, m]));
-            for (const item of items) {
-              if (!map.has(item.pathname)) map.set(item.pathname, item);
-            }
-            onChange([...map.values()]);
+            onChange(mergeMediaItems(media, items));
           }}
         />
       ) : null}

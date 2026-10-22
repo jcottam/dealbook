@@ -150,7 +150,7 @@ export function PreviewCommentsPanel({ previewId, initialComments }: Props) {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-y-0 right-0 z-40 flex items-center pr-3 sm:pr-4">
+      <div className="pointer-events-none fixed top-4 right-3 z-40 sm:top-6 sm:right-4">
         <Button
           type="button"
           size="icon"

@@ -9,6 +9,8 @@ workspaces/*/media/**
 *.JPEG
 *.png
 *.webp
+!public/workspaces/dealbook/dealbook-avatar.jpg
+!workspaces/dealbook/dealbook-avatar.jpg
 *.mp4
 *.mov
 *.MOV

@@ -14,6 +14,7 @@ import type { StoredClip, StoredImage } from "@/lib/blob";
 import { HEIC_PICKER_NOTE, isHeicPathname, isPreviewableImagePathname } from "@/lib/social-post-preview/media-preview";
 import { measureVideoUrl } from "@/lib/social-post-preview/measure-media";
 import type { SocialMediaItem } from "@/lib/social-post-preview/types";
+import { ClipThumbnail } from "@/components/social-post-preview/clip-thumbnail";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -153,7 +154,7 @@ export function MediaPickerDialog({ onClose, selectedPathnames, onConfirm }: Pro
                       picked.has(clip.pathname) && "border-primary bg-primary/5",
                     )}
                   >
-                    <div className="flex size-12 items-center justify-center rounded bg-muted text-xs">MP4</div>
+                    <ClipThumbnail url={clip.url} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{clip.label || clip.name}</p>
                       <p className="truncate text-xs text-muted-foreground">{clip.pathname}</p>

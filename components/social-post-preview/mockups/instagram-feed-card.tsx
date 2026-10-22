@@ -120,11 +120,23 @@ export function InstagramFeedCard({ profile, post, className }: Props) {
 }
 
 function CaptionBody({ caption }: { caption: string }) {
+  const [expanded, setExpanded] = useState(false);
   const { visible, truncated } = truncateInstagramCaption(caption);
+  const showMore = truncated && !expanded;
+
   return (
     <>
-      <FormattedCaption text={visible} linkClassName="text-sky-700" />
-      {truncated ? <span className="text-muted-foreground"> … more</span> : null}
+      <FormattedCaption text={showMore ? visible : caption} linkClassName="text-sky-700" />
+      {showMore ? (
+        <button
+          type="button"
+          className="inline text-muted-foreground hover:underline"
+          onClick={() => setExpanded(true)}
+        >
+          {" "}
+          … more
+        </button>
+      ) : null}
     </>
   );
 }

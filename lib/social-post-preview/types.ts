@@ -52,6 +52,9 @@ export type PreviewPostSummary = {
   platforms: Platform[];
   instagramType: InstagramPostType;
   thumbnailUrl: string | null;
+  thumbnailKind: MediaKind | null;
+  /** Frame to show for video thumbnails (Instagram cover frame for single-video posts). */
+  thumbnailSeconds: number;
   updatedAt: string;
 };
 

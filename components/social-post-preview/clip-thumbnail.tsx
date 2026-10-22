@@ -7,13 +7,16 @@ const SEEK_SECONDS = 0.1;
 
 type Props = {
   url: string;
+  /** Frame to show; defaults to just past the start (a frame at exactly 0 is often black). */
+  seconds?: number;
   className?: string;
 };
 
-/** Paused first-frame preview for MP4 clip rows (picker, lists). */
-export function ClipThumbnail({ url, className }: Props) {
+/** Paused still-frame preview for MP4 clip rows (picker, lists). */
+export function ClipThumbnail({ url, seconds, className }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [failed, setFailed] = useState(false);
+  const at = seconds && seconds > 0 ? seconds : SEEK_SECONDS;
 
   if (failed) {
     return (
@@ -31,10 +34,12 @@ export function ClipThumbnail({ url, className }: Props) {
   return (
     <video
       ref={videoRef}
-      src={url}
+      // iOS Safari won't paint a frame for preload="metadata" unless the URL has a media fragment.
+      src={`${url}#t=${at}`}
       muted
       playsInline
       preload="metadata"
+      aria-hidden
       className={cn("size-12 shrink-0 rounded object-cover bg-black", className)}
       onLoadedMetadata={() => {
         const video = videoRef.current;
@@ -44,7 +49,7 @@ export function ClipThumbnail({ url, className }: Props) {
         };
         video.addEventListener("seeked", pauseAtFrame, { once: true });
         try {
-          video.currentTime = Math.min(SEEK_SECONDS, video.duration || SEEK_SECONDS);
+          video.currentTime = Math.min(at, video.duration || at);
         } catch {
           pauseAtFrame();
         }

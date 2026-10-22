@@ -113,7 +113,6 @@ export function MediaSection({ media, onChange }: Props) {
       <ul className="space-y-2">
         {media.map((item, i) => {
           const name = imageDisplayName(item.pathname);
-          const showSlide = media.length > 1;
           return (
             <li
               key={item.pathname}
@@ -140,20 +139,12 @@ export function MediaSection({ media, onChange }: Props) {
               >
                 <GripVertical className="size-4 cursor-grab" aria-hidden />
               </button>
-              <div className="relative size-11 shrink-0 overflow-hidden rounded-md bg-muted">
+              <div className="size-11 shrink-0 overflow-hidden rounded-md bg-muted">
                 {item.kind === "video" ? (
                   <video src={item.url} className="h-full w-full object-cover" muted />
                 ) : (
                   <Image src={item.url} alt="" width={44} height={44} className="size-full object-cover" sizes="44px" />
                 )}
-                {showSlide ? (
-                  <span
-                    className="absolute bottom-0.5 right-0.5 rounded bg-black/65 px-1 text-[10px] font-medium leading-tight text-white tabular-nums"
-                    aria-hidden
-                  >
-                    {i + 1}
-                  </span>
-                ) : null}
               </div>
               <div className="min-w-0 flex-1 leading-tight">
                 <p className="truncate text-sm font-medium text-foreground">{name}</p>

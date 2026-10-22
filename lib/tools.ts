@@ -1,4 +1,4 @@
-import { ImageUp, Scissors, type LucideIcon } from "lucide-react";
+import { ImageUp, LayoutTemplate, Scissors, type LucideIcon } from "lucide-react";
 
 export type Tool = {
   slug: string;
@@ -20,6 +20,12 @@ export const tools: Tool[] = [
     title: "Image uploader",
     description: "Upload images and get public links to share with your team.",
     icon: ImageUp,
+  },
+  {
+    slug: "social-post-preview",
+    title: "Social Post Preview",
+    description: "Assemble Instagram and X posts, preview them, and share a review link with your team.",
+    icon: LayoutTemplate,
   },
 ];
 

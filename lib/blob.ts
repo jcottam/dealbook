@@ -1,6 +1,7 @@
 import { del, issueSignedToken, list, type ListBlobResultBlob, presignUrl, put } from "@vercel/blob";
 import {
   assetFolder,
+  CLIP_PREFIX,
   isClipPathname,
   isSidecar,
   labelFromSidecar,
@@ -52,6 +53,15 @@ export type StoredImage = {
   uploadedAt: string;
 };
 
+export type StoredClip = {
+  url: string;
+  pathname: string;
+  name: string;
+  label: string | null;
+  size: number;
+  uploadedAt: string;
+};
+
 const LIST_PAGE_LIMIT = 1000;
 const MAX_LIST_PAGES = 5;
 
@@ -90,6 +100,40 @@ export async function listPublicImages(): Promise<{ images: StoredImage[]; hasMo
     }))
     .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
   return { images, hasMore };
+}
+
+/** Newest first. Stops after a few list pages; `hasMore` says whether older clips were left out. */
+export async function listPublicClips(): Promise<{ clips: StoredClip[]; hasMore: boolean }> {
+  const token = publicBlobToken();
+  const blobs: ListBlobResultBlob[] = [];
+  let cursor: string | undefined;
+  let hasMore = false;
+  for (let page = 0; page < MAX_LIST_PAGES; page++) {
+    const result = await list({ prefix: CLIP_PREFIX, limit: LIST_PAGE_LIMIT, cursor, token });
+    blobs.push(...result.blobs);
+    hasMore = result.hasMore;
+    cursor = result.cursor;
+    if (!hasMore) break;
+  }
+
+  const labels = new Map<string, string>();
+  for (const b of blobs) {
+    const label = labelFromSidecar(b.pathname);
+    if (label) labels.set(assetFolder(b.pathname), label);
+  }
+
+  const clips = blobs
+    .filter((b) => isClipPathname(b.pathname))
+    .map((b) => ({
+      url: b.url,
+      pathname: b.pathname,
+      name: b.pathname.slice(b.pathname.lastIndexOf("/") + 1),
+      label: labels.get(assetFolder(b.pathname)) ?? null,
+      size: b.size,
+      uploadedAt: new Date(b.uploadedAt).toISOString(),
+    }))
+    .sort((a, b) => b.uploadedAt.localeCompare(a.uploadedAt));
+  return { clips, hasMore };
 }
 
 /** Removes the image and its label and tag sidecars. */

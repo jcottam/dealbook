@@ -150,26 +150,24 @@ export function PreviewCommentsPanel({ previewId, initialComments }: Props) {
 
   return (
     <>
-      <div className="pointer-events-none fixed top-4 right-3 z-40 sm:top-6 sm:right-4">
-        <Button
-          type="button"
-          size="icon"
-          variant="secondary"
-          className="pointer-events-auto relative size-12 rounded-full shadow-md"
-          aria-expanded={open}
-          aria-label={count ? `Comments, ${count} total` : "Comments"}
-          onClick={() => setOpen(true)}
-        >
-          <MessageSquare className="size-5" aria-hidden />
-          {count > 0 ? (
-            <span
-              className="absolute -top-1 -right-1 flex min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground tabular-nums"
-            >
-              {count > 99 ? "99+" : count}
-            </span>
-          ) : null}
-        </Button>
-      </div>
+      <Button
+        type="button"
+        size="icon"
+        variant="secondary"
+        className="relative size-10 shrink-0 rounded-full"
+        aria-expanded={open}
+        aria-label={count ? `Comments, ${count} total` : "Comments"}
+        onClick={() => setOpen(true)}
+      >
+        <MessageSquare className="size-5" aria-hidden />
+        {count > 0 ? (
+          <span
+            className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground tabular-nums ring-2 ring-white"
+          >
+            {count > 99 ? "99+" : count}
+          </span>
+        ) : null}
+      </Button>
 
       <Sheet
         open={open}

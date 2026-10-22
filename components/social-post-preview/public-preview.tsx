@@ -17,11 +17,10 @@ export function PublicPreview({ post, canEdit = false, initialComments = [] }: P
   const profile = getSocialProfile(post.profileId);
 
   return (
-    <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col gap-6 bg-white px-4 py-6">
-      <PreviewCommentsPanel previewId={post.id} initialComments={initialComments} />
-      <header className="flex items-center justify-between gap-3 border-b border-border/50 pb-3">
-        <span className="text-sm font-semibold tracking-tight text-foreground">Preview</span>
-        <div className="flex flex-col items-end gap-1">
+    <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col gap-6 bg-white px-4 pb-6">
+      <header className="sticky top-0 z-30 -mx-4 flex items-center gap-3 border-b border-border/50 bg-white/95 px-4 pt-4 pb-3 backdrop-blur supports-[backdrop-filter]:bg-white/90">
+        <span className="mr-auto text-sm font-semibold tracking-tight text-foreground">Preview</span>
+        <div className="flex min-w-0 flex-col items-end gap-1">
           {canEdit ? (
             <Link
               href={previewEditorPath(post.id)}
@@ -32,6 +31,7 @@ export function PublicPreview({ post, canEdit = false, initialComments = [] }: P
           ) : null}
           <PreviewUpdatedAt iso={post.updatedAt} />
         </div>
+        <PreviewCommentsPanel previewId={post.id} initialComments={initialComments} />
       </header>
       {post.platforms.includes("instagram") ? <InstagramFeedCard profile={profile} post={post} /> : null}
       {post.platforms.includes("x") ? <XCard profile={profile} post={post} /> : null}

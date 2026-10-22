@@ -24,7 +24,7 @@ export function PreviewUpdatedAt({ iso }: Props) {
     <time
       dateTime={iso}
       suppressHydrationWarning
-      className="text-right text-[11px] leading-none text-muted-foreground tabular-nums"
+      className="text-right text-[11px] leading-none whitespace-nowrap text-muted-foreground tabular-nums"
     >
       {`Updated ${label}`}
     </time>

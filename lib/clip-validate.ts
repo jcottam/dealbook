@@ -1,5 +1,6 @@
 import { normalizeLabel } from "@/lib/asset-labels";
 import { isAllowedClipUrl } from "@/lib/clip-url";
+import { normalizeFocus, type ReframeFocus } from "@/lib/media/reframe-crop";
 import type { ClipPreset, TimeRange } from "@/lib/media/ffmpeg-args";
 import { MAX_CLIP_SECONDS } from "@/lib/timecode";
 
@@ -13,6 +14,7 @@ export type ValidationError = { error: string; status: number };
 /** `label` is normalized; empty when not given. */
 export type ClipRequest = { range: TimeRange; preset: ClipPreset; source: SourceRef; label: string };
 export type TranscribeRequest = { range: TimeRange; source: SourceRef };
+export type ReframeRequest = { range: TimeRange; source: SourceRef; focus: ReframeFocus; label: string };
 
 export function isUploadPathname(pathname: string) {
   return (
@@ -62,6 +64,26 @@ export function parseTranscribeJson(body: unknown): TranscribeRequest | Validati
   const source = parseSource(o);
   if ("error" in source) return source;
   return { range, source };
+}
+
+function parseFocus(o: Record<string, unknown>): ReframeFocus {
+  const raw = o.focus;
+  if (!raw || typeof raw !== "object") return normalizeFocus(undefined);
+  const f = raw as Record<string, unknown>;
+  return normalizeFocus({
+    centerX: typeof f.centerX === "number" ? f.centerX : undefined,
+    centerY: typeof f.centerY === "number" ? f.centerY : undefined,
+  });
+}
+
+export function parseReframeJson(body: unknown): ReframeRequest | ValidationError {
+  const o = asObject(body);
+  if (!o) return { error: "Invalid body", status: 400 };
+  if (o.label != null && typeof o.label !== "string") return { error: "label must be a string", status: 400 };
+  const base = parseTranscribeJson(o);
+  if ("error" in base) return base;
+  const focus = parseFocus(o);
+  return { ...base, focus, label: normalizeLabel(o.label) };
 }
 
 export function parseClipJson(body: unknown): ClipRequest | ValidationError {

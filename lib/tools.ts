@@ -1,4 +1,4 @@
-import { ImageUp, LayoutTemplate, Scissors, type LucideIcon } from "lucide-react";
+import { ImageUp, LayoutTemplate, RectangleVertical, Scissors, type LucideIcon } from "lucide-react";
 
 export type Tool = {
   slug: string;
@@ -14,6 +14,12 @@ export const tools: Tool[] = [
     title: "Video clipper",
     description: "Trim videos from a URL or upload, export clips, and transcribe selections.",
     icon: Scissors,
+  },
+  {
+    slug: "reframe",
+    title: "Vertical reframe",
+    description: "Turn landscape video into 9:16 for Reels and Stories, with control over the crop.",
+    icon: RectangleVertical,
   },
   {
     slug: "images",

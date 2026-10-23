@@ -16,9 +16,12 @@ import { formatSeconds, formatTimecodeHmsMs, MAX_CLIP_SECONDS, parseTimeToSecond
 import { blobDownloadUrl } from "@/lib/blob-download-url";
 import { parsePresignedMeta } from "@/lib/clip-url";
 import { formatTimecodeRange, sheetLine } from "@/lib/sheet-format";
+import { ReframeCropPreview } from "@/components/reframe/reframe-crop-preview";
+import { DEFAULT_REFRAME_FOCUS, type ReframeFocus } from "@/lib/media/reframe-crop";
 import { cn } from "@/lib/utils";
 
 type SourceKind = "url" | "file";
+type ClipperMode = "trim" | "reframe";
 type ClipPreset = "team" | "copy";
 type ExportedClip = {
   url: string;
@@ -50,7 +53,9 @@ export function VideoClipper() {
   const [file, setFile] = useState<File | null>(null);
   const [startTime, setStartTime] = useState("0:00");
   const [endTime, setEndTime] = useState("0:30");
+  const [mode, setMode] = useState<ClipperMode>("trim");
   const [preset, setPreset] = useState<ClipPreset>("copy");
+  const [reframeFocus, setReframeFocus] = useState<ReframeFocus>(DEFAULT_REFRAME_FOCUS);
   const [busy, setBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [transcript, setTranscript] = useState("");
@@ -116,6 +121,7 @@ export function VideoClipper() {
     setTranscriptRange(null);
     setClipLabel("");
     setLastClip(null);
+    setReframeFocus(DEFAULT_REFRAME_FOCUS);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [cancelUpload]);
 
@@ -304,7 +310,10 @@ export function VideoClipper() {
     try {
       const source = await sourcePayload();
       setProgress(40);
-      const data = await postJson("/api/clip", { ...source, ...range, preset, label: clipLabel });
+      const data =
+        mode === "reframe"
+          ? await postJson("/api/reframe", { ...source, ...range, focus: reframeFocus, label: clipLabel })
+          : await postJson("/api/clip", { ...source, ...range, preset, label: clipLabel });
       const clip: ExportedClip = {
         url: data.url,
         pathname: data.pathname,
@@ -431,7 +440,18 @@ export function VideoClipper() {
               </CardAction>
             </CardHeader>
             <CardContent className={CLIPPER_CARD_CONTENT}>
-              <video ref={videoRef} src={previewSrc} controls className="aspect-video w-full rounded-md bg-black" />
+              {mode === "reframe" ? (
+                <ReframeCropPreview videoRef={videoRef} focus={reframeFocus} onFocusChange={setReframeFocus}>
+                  <video
+                    ref={videoRef}
+                    src={previewSrc}
+                    controls
+                    className="aspect-video w-full object-contain"
+                  />
+                </ReframeCropPreview>
+              ) : (
+                <video ref={videoRef} src={previewSrc} controls className="aspect-video w-full rounded-md bg-black" />
+              )}
               {urlMeta ? (
                 <p className="text-xs text-muted-foreground">
                   {urlMeta.filename ? <span className="font-medium text-foreground">{urlMeta.filename}</span> : urlMeta.host}
@@ -505,6 +525,35 @@ export function VideoClipper() {
       <div className="space-y-6">
         <Card className={CLIPPER_CARD}>
           <CardHeader className={CLIPPER_CARD_HEADER}>
+            <CardTitle>Mode</CardTitle>
+            <CardDescription>Trim the source or export a vertical 9:16 crop of the selection.</CardDescription>
+          </CardHeader>
+          <CardContent className="pb-4 pt-2">
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={mode === "trim" ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => setMode("trim")}
+              >
+                Trim
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={mode === "reframe" ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => setMode("reframe")}
+              >
+                Vertical 9:16
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={CLIPPER_CARD}>
+          <CardHeader className={CLIPPER_CARD_HEADER}>
             <CardTitle>In / out</CardTitle>
             <CardDescription>
               {durationSeconds != null ? `${formatSeconds(durationSeconds)} selected` : "Set start and end"}
@@ -568,35 +617,39 @@ export function VideoClipper() {
                 onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Export quality</Label>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="preset-share"
-                    checked={preset === "team"}
-                    onCheckedChange={(checked) => {
-                      if (checked === true) setPreset("team");
-                    }}
-                  />
-                  <Label htmlFor="preset-share" className="cursor-pointer font-normal">
-                    Share quality
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="preset-full"
-                    checked={preset === "copy"}
-                    onCheckedChange={(checked) => {
-                      if (checked === true) setPreset("copy");
-                    }}
-                  />
-                  <Label htmlFor="preset-full" className="cursor-pointer font-normal">
-                    Full quality
-                  </Label>
+            {mode === "trim" ? (
+              <div className="space-y-2">
+                <Label>Export quality</Label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="preset-share"
+                      checked={preset === "team"}
+                      onCheckedChange={(checked) => {
+                        if (checked === true) setPreset("team");
+                      }}
+                    />
+                    <Label htmlFor="preset-share" className="cursor-pointer font-normal">
+                      Share quality
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="preset-full"
+                      checked={preset === "copy"}
+                      onCheckedChange={(checked) => {
+                        if (checked === true) setPreset("copy");
+                      }}
+                    />
+                    <Label htmlFor="preset-full" className="cursor-pointer font-normal">
+                      Full quality
+                    </Label>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Exports H.264 at 1080×1920 with your crop position.</p>
+            )}
             {busy ? (
               <div className="space-y-1">
                 {uploadState?.status === "uploading" ? (
@@ -607,7 +660,9 @@ export function VideoClipper() {
                 ) : (
                   <>
                     <Progress value={progress} />
-                    <p className="text-xs text-muted-foreground">{busy === "clip" ? "Creating clip…" : "Transcribing…"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {busy === "clip" ? (mode === "reframe" ? "Exporting vertical video…" : "Creating clip…") : "Transcribing…"}
+                    </p>
                   </>
                 )}
               </div>
@@ -619,10 +674,10 @@ export function VideoClipper() {
                 disabled={!previewSrc || !!busy}
                 onClick={createShareLink}
               >
-                Create share link
+                {mode === "reframe" ? "Create vertical share link" : "Create share link"}
               </Button>
               <Button type="button" className="w-full" variant="outline" disabled={!previewSrc || !!busy} onClick={saveClipToDevice}>
-                Save to device
+                {mode === "reframe" ? "Save vertical to device" : "Save to device"}
               </Button>
             </div>
             {lastClip ? (
@@ -668,25 +723,29 @@ export function VideoClipper() {
                 </p>
               </div>
             ) : null}
-            <div className="space-y-4 border-t border-border pt-6">
-              <Button type="button" className="w-full" variant="secondary" disabled={!previewSrc || !!busy} onClick={runTranscribe}>
-                Transcribe selection
-              </Button>
-            </div>
+            {mode === "trim" ? (
+              <div className="space-y-4 border-t border-border pt-6">
+                <Button type="button" className="w-full" variant="secondary" disabled={!previewSrc || !!busy} onClick={runTranscribe}>
+                  Transcribe selection
+                </Button>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
-        <Card className={CLIPPER_CARD}>
-          <CardHeader className={CLIPPER_CARD_HEADER}>
-            <CardTitle>Transcript</CardTitle>
-          </CardHeader>
-          <CardContent className={CLIPPER_CARD_CONTENT}>
-            <Textarea value={transcript} readOnly placeholder="Run transcribe to fill this in." rows={8} className="resize-none text-sm" />
-            <Button type="button" variant="outline" size="sm" disabled={!transcript} onClick={copyTranscript}>
-              Copy to clipboard
-            </Button>
-          </CardContent>
-        </Card>
+        {mode === "trim" ? (
+          <Card className={CLIPPER_CARD}>
+            <CardHeader className={CLIPPER_CARD_HEADER}>
+              <CardTitle>Transcript</CardTitle>
+            </CardHeader>
+            <CardContent className={CLIPPER_CARD_CONTENT}>
+              <Textarea value={transcript} readOnly placeholder="Run transcribe to fill this in." rows={8} className="resize-none text-sm" />
+              <Button type="button" variant="outline" size="sm" disabled={!transcript} onClick={copyTranscript}>
+                Copy to clipboard
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
       ) : null}
     </div>

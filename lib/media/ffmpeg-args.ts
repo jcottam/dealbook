@@ -1,3 +1,5 @@
+import type { ReframeFocus as ReframeFocusInput } from "@/lib/media/reframe-crop";
+
 export type TimeRange = { start: number; end: number };
 
 const BASE = ["-hide_banner", "-nostdin", "-loglevel", "error"];
@@ -35,6 +37,8 @@ export function audioExtractArgs(input: string, range: TimeRange, output: string
 }
 
 export type ClipPreset = "team" | "copy";
+
+export type ReframeFocus = ReframeFocusInput;
 
 /**
  * MP4 of the selection.
@@ -75,6 +79,45 @@ export function clipArgs(input: string, range: TimeRange, output: string, preset
     "-map",
     "0:a:0?",
     ...codec,
+    "-movflags",
+    "+faststart",
+    "-y",
+    output,
+  ];
+}
+
+/**
+ * 9:16 vertical MP4 of the selection (always re-encoded).
+ * Pass a pre-built `-vf` chain (see `reframeVideoFilter` after ffprobe).
+ */
+export function reframeArgs(input: string, range: TimeRange, output: string, videoFilter: string): string[] {
+  const vf = videoFilter;
+  return [
+    ...BASE,
+    "-ss",
+    seconds(range.start),
+    "-i",
+    input,
+    "-t",
+    seconds(range.end - range.start),
+    "-map",
+    "0:v:0",
+    "-map",
+    "0:a:0?",
+    "-vf",
+    vf,
+    "-c:v",
+    "libx264",
+    "-preset",
+    "veryfast",
+    "-crf",
+    "23",
+    "-pix_fmt",
+    "yuv420p",
+    "-c:a",
+    "aac",
+    "-b:a",
+    "128k",
     "-movflags",
     "+faststart",
     "-y",

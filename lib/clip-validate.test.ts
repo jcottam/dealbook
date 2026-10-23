@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isUploadPathname, parseClipJson, parseTranscribeJson } from "@/lib/clip-validate";
+import { isUploadPathname, parseClipJson, parseReframeJson, parseTranscribeJson } from "@/lib/clip-validate";
 
 const MIMIR = "https://mimir-edit-web-proxies.s3.us-east-1.amazonaws.com/a/proxy_1.mp4?X-Amz-Signature=x";
 
@@ -58,5 +58,19 @@ describe("parseClipJson", () => {
       label: "Musk quote",
     });
     expect(parseClipJson({ url: MIMIR, start: 0, end: 10, preset: "team", label: 5 })).toMatchObject({ status: 400 });
+  });
+});
+
+describe("parseReframeJson", () => {
+  it("accepts source, range, and optional focus", () => {
+    expect(parseReframeJson({ url: MIMIR, start: 0, end: 10 })).toMatchObject({
+      focus: { centerX: 0.5, centerY: 0.5 },
+      label: "",
+    });
+    expect(
+      parseReframeJson({ url: MIMIR, start: 0, end: 10, focus: { centerX: 0.25, centerY: 0.75 } }),
+    ).toMatchObject({
+      focus: { centerX: 0.25, centerY: 0.75 },
+    });
   });
 });

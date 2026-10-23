@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { audioExtractArgs, clipArgs, redactUrls } from "@/lib/media/ffmpeg-args";
+import { audioExtractArgs, clipArgs, reframeArgs, redactUrls } from "@/lib/media/ffmpeg-args";
 
 describe("audioExtractArgs", () => {
   it("seeks before the input and limits duration", () => {
@@ -45,6 +45,18 @@ describe("clipArgs", () => {
 
   it("tolerates sources without audio", () => {
     expect(clipArgs("in.mp4", range, "o.mp4", "team")).toContain("0:a:0?");
+  });
+});
+
+describe("reframeArgs", () => {
+  const range = { start: 0, end: 30 };
+  const vf = "crop=606:1080:657:0,scale=1080:1920";
+
+  it("re-encodes with crop filter and faststart", () => {
+    const args = reframeArgs("in.mp4", range, "/out.mp4", vf);
+    expect(args[args.indexOf("-c:v") + 1]).toBe("libx264");
+    expect(args[args.indexOf("-vf") + 1]).toContain("scale=1080:1920");
+    expect(args.slice(args.indexOf("-movflags"), args.indexOf("-movflags") + 2)).toEqual(["-movflags", "+faststart"]);
   });
 });
 

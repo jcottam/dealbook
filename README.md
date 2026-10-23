@@ -6,12 +6,13 @@ A growing set of tools to package and prepare content for social media and produ
 
 | Route | Purpose |
 |-------|---------|
-| `/clipper` | Trim video from an allowlisted URL or a private `uploads/` file; export MP4 to `clips/`; optional transcription |
+| `/clipper` | Trim video from an allowlisted URL or a private `uploads/` file; export MP4 to `clips/`; optional transcription; **Vertical 9:16** mode |
+| `/reframe` | Reframe landscape video to 9:16 (1080×1920) with adjustable crop; same upload/URL sources as the clipper |
 | `/images` | Upload images to `images/`; labels, tags, and sheet copy for the DealBook calendar |
 | `/social-post-preview` | Build Instagram and X mockups, create named share links, manage share history |
 | `/preview/<id>` | View-only review page for a share link (mockups + team comments). Not in the sidebar |
 
-Internal routes (`/`, `/clipper`, `/images`, `/social-post-preview`) are meant to sit behind **Cloudflare Zero Trust**. Share links at `/preview/<id>` are for reviewers; editors who pass Access may see **Edit Preview** in the header (see **Access** below).
+Internal routes (`/`, `/clipper`, `/reframe`, `/images`, `/social-post-preview`) are meant to sit behind **Cloudflare Zero Trust**. Share links at `/preview/<id>` are for reviewers; editors who pass Access may see **Edit Preview** in the header (see **Access** below).
 
 ## Repository layout
 
